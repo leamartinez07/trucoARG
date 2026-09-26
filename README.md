@@ -1,0 +1,69 @@
+# Truco argentino
+
+Truco online para 2, 4 o 6 jugadores. La aplicación abre en la sala de mesas: entrar a una pública, crear una privada, compartir un código o jugar contra bots. Baraja española clásica de 40 cartas.
+
+## Ejecutar
+
+Requiere Node.js 24 y pnpm. Con npm también se pueden ejecutar los scripts.
+
+```sh
+pnpm install
+pnpm dev
+```
+
+Abrir http://localhost:5173. Vite redirige `/api` al servidor en el puerto 3001 (no hay WebSockets: el cliente consulta `/api/game` por HTTP, con sondeo corto). Para probar entre dispositivos en la misma red, abrir la dirección IP del equipo en el puerto 5173 y permitir ambos procesos en el firewall si corresponde. Sin `DATABASE_URL`, el servidor guarda las mesas y el historial en `.data/truco.sqlite` (SQLite local).
+
+```sh
+pnpm test
+pnpm build
+pnpm start
+```
+
+En producción el servidor sirve `dist` y la API desde el mismo origen. `PORT` cambia el puerto (3001 por defecto). En Vercel, `api/game.ts` corre como función serverless y necesita `DATABASE_URL` (o `POSTGRES_URL`) apuntando a Postgres — ver "Desplegar" más abajo.
+
+## Incluido
+
+- Salas privadas por código y link, mesas públicas con lista en vivo, nombres, equipos alternados 1v1 / 2v2 / 3v3 y chat.
+- Partidas a 15 o 30, jerarquía argentina, bazas y pardas, envido / real / falta, truco / retruco / vale cuatro, al mazo y rotación de mano.
+- Envido puede interrumpir el primer truco; empates de tanto se resuelven por mano.
+- Práctica local y bots para completar salas. Los bots son básicos: no pretenden simular un jugador experto.
+- Servidor autoritativo con barajado criptográfico. Cada cliente recibe únicamente su mano, sus tantos y el estado público.
+- Persistencia en Postgres (Neon) o SQLite local: las mesas sobreviven a un reinicio del servidor y cada partida terminada queda archivada.
+- Perfil por jugador (clave privada guardada en el navegador, exportable/recuperable) con historial de partidas, resultado, rivales frecuentes y repaso mano por mano de las cartas y cantos.
+- Reconexión automática: la identidad depende de la clave del navegador, no de una sesión de socket, así que recargar la página no saca a nadie de la mesa.
+- Interfaz adaptable, botones accesibles, diálogos nativos, sonidos opcionales y movimiento reducido.
+- Voz, video y señas a través de Discord. **No hay cámara ni micrófono integrados en la página.**
+
+## Reglas acordadas
+
+Sin flor y sin pica-pica (3v3 se juega siempre en equipos). En malas, la falta envido vale lo que le falta al equipo de menor puntaje para llegar al objetivo; en buenas, lo que le falta al de mayor puntaje. El equipo decide el canto: cualquiera de sus integrantes puede responder. Al mazo concede el valor actual del truco. Estas variantes están explicadas en la ayuda.
+
+## Desplegar en Vercel
+
+1. `vercel link` (o conectar el repo desde el dashboard).
+2. Agregar una base Postgres — el plan gratuito de Neon desde la pestaña Storage del proyecto en Vercel funciona directo — y confirmar que `DATABASE_URL` quedó seteada en las variables de entorno del proyecto.
+3. `vercel deploy --prod` (o dejar que el deploy automático de git lo haga).
+
+Sin `DATABASE_URL` configurada, las funciones serverless de Vercel fallan al guardar partidas (no hay disco persistente para SQLite en ese entorno).
+
+## Límites actuales
+
+Un único proceso/función admite las salas; antes de un lanzamiento más grande conviene sumar protección ante abuso a nivel de IP y observabilidad. No hay emparejamiento automático: las mesas públicas se eligen de la lista.
+
+## Estructura
+
+- `shared/game.ts`: reglas puras, motor y proyección privada por jugador.
+- `shared/random.ts`: generador aleatorio criptográfico sin sesgo para el reparto.
+- `server/service.ts` + `server/store.ts`: salas, historial, persistencia (Postgres/SQLite) y bots.
+- `server/api.ts` + `api/game.ts`: endpoint HTTP, también expuesto como función de Vercel.
+- `src/main.tsx`: lobby, mesa y controles React.
+- `src/Lobby.tsx`: mesas públicas, configuración y entrada por código.
+- `src/Profile.tsx`: perfil, historial de partidas y recuperación de clave.
+- `src/style.css` / `src/light.css`: identidad visual, tema claro y adaptación móvil.
+- `tests/`: pruebas del motor y del protocolo multijugador (`tests/online.test.ts` levanta el servidor real y juega mesas de 1v1/2v2/3v3 por HTTP).
+
+## Cartas y licencia
+
+Arte original de [Basquetteur](https://commons.wikimedia.org/wiki/User:Basquetteur), vectorizado por [gjenkins20](https://github.com/gjenkins20/spanish-playing-cards-svg), bajo [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/). Los SVG fueron convertidos a WebP a 360 × 554 sin modificar las ilustraciones. La atribución también aparece en la aplicación. La licencia de las cartas se conserva y no aplica automáticamente al código del juego.
+
+La arquitectura se apoya en la [documentación oficial de Vite](https://vite.dev/guide/).

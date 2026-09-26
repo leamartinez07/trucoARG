@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.env
+*.log
+artifacts/
+.data/
+.vercel/
+.env.*
+cards-reference.jpg
+cards-preview.png
+
+.vercel
+.env*
