@@ -53,9 +53,9 @@ body { background: #f9f5e7; font-weight: 500; }
 .lobby h1 { display: flex; align-items: center; justify-content: center; gap: clamp(8px,2vw,24px); font-family: 'Berkshire Swash',Georgia,serif; font-size: clamp(38px,5vw,64px); font-weight: 400; color: #315c96; letter-spacing: 0; line-height: 1.1; }
 .lobby h1::before,.lobby h1::after { display: none; }
 .lobby-title p { margin-top: 8px; color: #425e7b; font-size: 16px; font-weight: 600; }
-.lobby-heading .connection-state { position: absolute; right: 2px; bottom: -26px; }
+.lobby-heading .connection-state { position: absolute; left: 50%; right: auto; bottom: -26px; transform: translateX(-50%); white-space: nowrap; }
 .profile-page .lobby-heading::before,.profile-page .lobby-heading::after { display: none; }
-.profile-page .lobby-heading { display: block; min-height: 0; padding: 0 0 18px; margin-bottom: 22px; }
+.profile-page .lobby-heading { display: block; min-height: 0; padding: 0 0 18px; margin-bottom: 22px; border: 0; border-bottom: 1px solid #b9c8d9; border-radius: 0; background: none; box-shadow: none; }
 .profile-page h1 { color: #315c96; font-family: 'Berkshire Swash', Georgia, serif; font-size: clamp(30px,3vw,42px); font-weight: 400; letter-spacing: 0; }
 .profile-page .lobby-heading .small-muted { align-self: end; }
 .avatar-photo { width: 100%; height: 100%; display: block; object-fit: cover; border-radius: 50%; }
@@ -87,7 +87,7 @@ body { background: #f9f5e7; font-weight: 500; }
 .practice-panel { background: #fffdf5; }
 .practice-panel { min-height: 143px; padding: 18px 24px; gap: 27px; box-shadow: none; }
 .practice-cards { position: relative; display: block; width: 136px; height: 100px; flex: none; }
-.practice-cards img { position: absolute; top: 4px; width: 58px; height: 89px; object-fit: contain; border: 1px solid #d8cfb8; background: #fffdf4; box-shadow: 0 2px 4px #173d5b1f; filter: brightness(1.3) contrast(1.05) saturate(1.22); }
+.practice-cards img { position: absolute; top: 4px; width: 58px; height: 89px; object-fit: contain; border: 1px solid #d8cfb8; background: #fffdf4; box-shadow: 0 2px 4px #173d5b1f; filter: brightness(1.14) contrast(1.04) saturate(1.12); }
 .practice-cards img:nth-child(1) { left: 2px; transform: rotate(-10deg); }
 .practice-cards img:nth-child(2) { left: 40px; z-index: 1; }
 .practice-cards img:nth-child(3) { left: 78px; transform: rotate(10deg); }
@@ -211,7 +211,7 @@ dialog .dialog-close { color: #315c96; }
   .lobby-heading::after { right: 8px; }
   .lobby h1 { font-size: 39px; }
   .lobby-title p { font-size: 14px; max-width: 290px; margin-inline: auto; }
-  .lobby-heading .connection-state { right: 2px; bottom: -24px; }
+  .lobby-heading .connection-state { bottom: -24px; }
   .game-notice { position: fixed; top: 18dvh; left: 7%; right: 7%; width: 86%; max-width: 390px; margin: auto; padding: 18px 16px; }
   .practice-panel { padding: 17px; gap: 12px; }
   .practice-cards { width: 113px; height: 82px; }
