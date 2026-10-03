@@ -25,8 +25,8 @@ body { background: #f9f5e7; font-weight: 500; }
   font-size: 26px;
   font-weight: 400;
   line-height: 1;
-  text-shadow: 1px 1px 0 #d8b35e;
-  -webkit-text-stroke: .25px #315c96;
+  text-shadow: 1px 1px 0 #f0b92e, 2px 2px 0 #d29a1c;
+  -webkit-text-stroke: .3px #315c96;
 }
 .wordmark-flower { display: block; flex: none; width: 27px; height: 27px; margin-left: 1px; border-radius: 50%; background: url('/filete-corner.png') -17px -18px / 128px 123px no-repeat; }
 .site-header nav button, .header-tools button { color: #42638a; font-weight: 600; transition: color .16s ease, background-color .16s ease; }
@@ -53,7 +53,7 @@ body { background: #f9f5e7; font-weight: 500; }
 .lobby h1 { display: flex; align-items: center; justify-content: center; gap: clamp(8px,2vw,24px); font-family: 'Berkshire Swash',Georgia,serif; font-size: clamp(38px,5vw,64px); font-weight: 400; color: #315c96; letter-spacing: 0; line-height: 1.1; }
 .lobby h1::before,.lobby h1::after { display: none; }
 .lobby-title p { margin-top: 8px; color: #425e7b; font-size: 16px; font-weight: 600; }
-.lobby-heading .connection-state { position: absolute; left: 50%; right: auto; bottom: -26px; transform: translateX(-50%); white-space: nowrap; }
+.lobby-heading .connection-state { position: absolute; top: 100%; right: 4px; bottom: auto; height: 44px; display: flex; align-items: center; white-space: nowrap; }
 .profile-page .lobby-heading::before,.profile-page .lobby-heading::after { display: none; }
 .profile-page .lobby-heading { display: block; min-height: 0; padding: 0 0 18px; margin-bottom: 22px; border: 0; border-bottom: 1px solid #b9c8d9; border-radius: 0; background: none; box-shadow: none; }
 .profile-page h1 { color: #315c96; font-family: 'Berkshire Swash', Georgia, serif; font-size: clamp(30px,3vw,42px); font-weight: 400; letter-spacing: 0; }
@@ -201,6 +201,17 @@ dialog .dialog-close { color: #315c96; }
 .waiting-players > div:nth-child(6) svg { animation-delay: 1.75s; }
 @keyframes waiting-seat { 0%,100% { opacity: .52; transform: translateY(0); } 50% { opacity: .95; transform: translateY(-3px); } }
 @media (prefers-reduced-motion: reduce) { .seat-turn .avatar::after,.waiting-loader-ring,.waiting-players > div:not(.occupied) svg { animation: none; } }
+/* hover coherente con el nav */
+.table-filters button, .segmented button, .primary, .outline, .invite, .call, .back-link, .dialog-close, .chat-panel form button { transition: color .16s ease, background-color .16s ease, border-color .16s ease, box-shadow .16s ease; }
+button:hover:not(:disabled) { filter: none; }
+.table-filters button:not(.active):hover, .segmented button:not(.active):hover { background: #f3ecd3; color: #1d4a84; box-shadow: inset 0 -2px 0 #ca9e3f; }
+.primary:hover:not(:disabled), .chat-panel form button:hover:not(:disabled), .table-filters .active:hover, .segmented .active:hover { background: #254b80; box-shadow: inset 0 -2px 0 #ca9e3f; }
+.outline:hover:not(:disabled), .invite:hover:not(:disabled), .call:hover:not(:disabled), .playing-table .game-actions .call:hover:not(:disabled), .playing-table .game-actions .fold:hover:not(:disabled) { background: #f3ecd3; color: #1d4a84; border-color: #315c96; box-shadow: inset 0 -2px 0 #ca9e3f; }
+.back-link:hover, .dialog-close:hover:not(:disabled) { color: #1d4a84; background: #f3ecd3; }
+.room-row { transition: background-color .16s ease; }
+.room-row:hover { background: #fbf6e2; }
+.my-hand button:hover:not(:disabled) { filter: brightness(1.06); }
+@media (prefers-reduced-motion: reduce) { .table-filters button, .segmented button, .primary, .outline, .invite, .call, .back-link, .dialog-close, .room-row, .site-header nav button, .site-header nav button::after { transition: none; } }
 @media (max-width: 680px) {
   .site-header { box-shadow: none; }
   .wordmark strong { font-size: 21px; }
@@ -211,7 +222,7 @@ dialog .dialog-close { color: #315c96; }
   .lobby-heading::after { right: 8px; }
   .lobby h1 { font-size: 39px; }
   .lobby-title p { font-size: 14px; max-width: 290px; margin-inline: auto; }
-  .lobby-heading .connection-state { bottom: -24px; }
+  .lobby-heading .connection-state { height: 38px; }
   .game-notice { position: fixed; top: 18dvh; left: 7%; right: 7%; width: 86%; max-width: 390px; margin: auto; padding: 18px 16px; }
   .practice-panel { padding: 17px; gap: 12px; }
   .practice-cards { width: 113px; height: 82px; }
