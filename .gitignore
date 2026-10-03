@@ -11,3 +11,5 @@ cards-preview.png
 
 .vercel
 .env*
+.pnpm-store/
+node-*.msi

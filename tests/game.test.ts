@@ -12,8 +12,10 @@ import {
   view,
   deal,
   botStep,
+  visibleTricks,
 } from '../shared/game.ts';
 import type { Card, Player } from '../shared/game.ts';
+import { relativeSeat, playedPosition } from '../src/table-layout.ts';
 const c = (suit: Card['suit'], value: number): Card => ({ suit, value, id: `${suit}-${value}` });
 const players = (size = 2): Player[] =>
   Array.from({ length: size }, (_, i) => ({
@@ -71,8 +73,8 @@ test('envido igualado lo gana la mano y no termina el truco', () => {
     [c('espadas', 7), c('espadas', 6), c('copas', 4)],
     [c('oros', 7), c('oros', 6), c('bastos', 5)],
   ];
-  callBid(g, 1, 'envido');
-  answerBid(g, 0, true);
+  callBid(g, 0, 'envido');
+  answerBid(g, 1, true);
   assert.deepEqual(g.scores, [2, 0]);
   assert.equal(g.status, 'playing');
   assert.equal(g.envidoDone, true);
@@ -94,6 +96,7 @@ test('subir y rechazar retruco otorga dos puntos', () => {
   assert.throws(() => playCard(g, 0, g.hands[0][0].id));
   answerBid(g, 1, true);
   assert.throws(() => callBid(g, 0, 'retruco'));
+  playCard(g, 0, g.hands[0][0].id);
   callBid(g, 1, 'retruco');
   answerBid(g, 0, false);
   assert.deepEqual(g.scores, [0, 2]);
@@ -110,6 +113,33 @@ test('envido envido real acumula, no permite bajar la apuesta', () => {
   answerBid(g, 1, false);
   assert.deepEqual(g.scores, [4, 0]);
 });
+test('un canto inicial exige turno, pero el rival puede responder subiendo el envido', () => {
+  const g = createGame(players());
+  assert.throws(() => callBid(g, 1, 'truco'), /turno/);
+  assert.throws(() => callBid(g, 1, 'envido'), /turno/);
+  callBid(g, 0, 'envido');
+  callBid(g, 1, 'real envido');
+  assert.equal(g.bid?.points, 5);
+  answerBid(g, 0, false);
+  assert.deepEqual(g.scores, [0, 2]);
+
+  const second = createGame(players());
+  callBid(second, 0, 'envido');
+  callBid(second, 1, 'envido');
+  assert.equal(second.bid?.points, 4);
+});
+
+test('se puede contestar con real o falta envido tras haber tirado una carta', () => {
+  for (const raise of ['real envido', 'falta envido'] as const) {
+    const g = createGame(players());
+    playCard(g, 0, g.hands[0][0].id);
+    callBid(g, 1, 'envido');
+    callBid(g, 0, raise);
+    assert.equal(g.bid?.name, raise);
+    answerBid(g, 1, true);
+    assert.equal(g.envidoDone, true);
+  }
+});
 test('bots completan partidas de todos los tamaños sin bloquear el motor', () => {
   for (const size of [2, 4, 6]) {
     const p = players(size).map((p) => ({ ...p, bot: true }));
@@ -123,4 +153,67 @@ test('bots completan partidas de todos los tamaños sin bloquear el motor', () =
     assert.equal(g.status, 'finished');
     assert.ok(Math.max(...g.scores) >= 15);
   }
+});
+
+test('turnos, mano y prioridades siguen el mismo recorrido antihorario desde cualquier asiento', () => {
+  for (const size of [2, 4, 6]) {
+    const g = createGame(players(size));
+    for (let viewer = 0; viewer < size; viewer++) {
+      const right = (viewer + 1) % size;
+      assert.equal(relativeSeat(right, viewer, size), 1);
+      if (size > 2) assert.ok(Number.parseFloat(playedPosition(1, size).left) > 50);
+    }
+    for (let seat = 0; seat < size; seat++) {
+      assert.equal(g.turn, seat);
+      playCard(g, seat, g.hands[seat][0].id);
+    }
+    assert.deepEqual(
+      g.trickPlays[0].map((p) => p.seat),
+      players(size).map((_, i) => i),
+    );
+    assert.equal(g.turn, g.trickLeader);
+    deal(g);
+    assert.equal(g.mano, 1);
+    assert.equal(g.turn, 1);
+    assert.deepEqual(g.trickPlays, []);
+  }
+});
+
+test('las cartas conservan dueño y orden de baza aunque cambie quien sale', () => {
+  const g = createGame(players(4));
+  g.hands = [
+    [c('espadas', 4), c('espadas', 1), c('oros', 4)],
+    [c('bastos', 1), c('bastos', 4), c('copas', 4)],
+    [c('oros', 5), c('oros', 6), c('oros', 7)],
+    [c('copas', 5), c('copas', 6), c('copas', 7)],
+  ];
+  for (let seat = 0; seat < 4; seat++) playCard(g, seat, g.hands[seat][0].id);
+  const first = structuredClone(g.trickPlays[0]);
+  assert.equal(g.turn, 1);
+  for (const seat of [1, 2, 3, 0]) playCard(g, seat, g.hands[seat][0].id);
+  assert.equal(g.turn, 0);
+  assert.deepEqual(g.trickPlays[0], first);
+  assert.deepEqual(
+    g.trickPlays[1].map((p) => p.seat),
+    [1, 2, 3, 0],
+  );
+  assert.equal(g.trickPlays.flat().length, 8);
+  for (let seat = 0; seat < 4; seat++) playCard(g, seat, g.hands[seat][0].id);
+  assert.equal(g.trickPlays.flat().length, 12);
+  for (let seat = 0; seat < 4; seat++)
+    assert.equal(
+      visibleTricks(view(g, seat))
+        .flat()
+        .filter((p) => p.seat === seat).length,
+      3,
+    );
+});
+
+test('una mesa anterior a la actualización conserva la última baza visible', () => {
+  const g = createGame(players());
+  playCard(g, 0, g.hands[0][0].id);
+  delete (g as Partial<typeof g>).trickPlays;
+  assert.deepEqual(visibleTricks(g)[0], g.table);
+  playCard(g, 1, g.hands[1][0].id);
+  assert.equal(g.trickPlays[0].length, 2);
 });

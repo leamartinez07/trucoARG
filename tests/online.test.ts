@@ -55,8 +55,30 @@ test('salas reales: 1v1, 2v2, 3v3, manos privadas, turnos y reconexión', async 
   try {
     await Promise.race([
       once(server.stdout!, 'data'),
-      new Promise((_, reject) => setTimeout(() => reject(Error('Servidor no arrancó')), 7000).unref()),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(Error('Servidor no arrancó')), 7000).unref(),
+      ),
     ]);
+    for (const body of ['{', JSON.stringify({ action: 'history', extra: 'x'.repeat(5000) })]) {
+      const invalid = await fetch(`${base}/api/game`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token()}` },
+        body,
+      });
+      assert.equal(invalid.status, 400);
+      assert.equal((await invalid.json()).ok, false);
+    }
+    const crossOrigin = await fetch(`${base}/api/game`, {
+      method: 'POST',
+      headers: {
+        Origin: 'https://otro-sitio.example',
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token()}`,
+      },
+      body: JSON.stringify({ action: 'history' }),
+    });
+    assert.equal(crossOrigin.status, 400);
+    assert.equal((await crossOrigin.json()).ok, false);
     for (const size of [2, 4, 6]) {
       const tokens = Array.from({ length: size }, token);
       const seats = tokens.map(() => client(base));
@@ -70,10 +92,14 @@ test('salas reales: 1v1, 2v2, 3v3, manos privadas, turnos y reconexión', async 
       });
       assert.ok(created.ok, created.error ?? '');
       const code = created.code!;
+      assert.match(code, /^[A-F0-9]{10}$/);
       for (const seat of seats) seat.code = code;
 
       const listing = (await (await fetch(`${base}/api/game`)).json()) as Reply;
-      assert.equal(listing.tables!.some((t) => t.code === code), size === 4);
+      assert.equal(
+        listing.tables!.some((t) => t.code === code),
+        size === 4,
+      );
       if (size === 4) assert.equal(listing.tables!.find((t) => t.code === code)!.count, 1);
 
       for (let i = 1; i < size; i++) {
@@ -88,7 +114,10 @@ test('salas reales: 1v1, 2v2, 3v3, manos privadas, turnos y reconexión', async 
       assert.ok(started.ok, started.error ?? '');
 
       const listingAfter = (await (await fetch(`${base}/api/game`)).json()) as Reply;
-      assert.equal(listingAfter.tables!.some((t) => t.code === code), false);
+      assert.equal(
+        listingAfter.tables!.some((t) => t.code === code),
+        false,
+      );
 
       const rooms = await Promise.all(
         seats.map((seat, i) => seat.send(tokens[i]!, { action: 'poll' })),
@@ -102,9 +131,15 @@ test('salas reales: 1v1, 2v2, 3v3, manos privadas, turnos y reconexión', async 
         assert.equal(game.hand.length, 3);
       }
 
-      const outOfTurn = await seats[1]!.send(tokens[1]!, { action: 'play', card: hands[1]![0]!.id });
+      const outOfTurn = await seats[1]!.send(tokens[1]!, {
+        action: 'play',
+        card: hands[1]![0]!.id,
+      });
       assert.equal(outOfTurn.ok, false);
-      const wrongCard = await seats[0]!.send(tokens[0]!, { action: 'play', card: hands[1]![0]!.id });
+      const wrongCard = await seats[0]!.send(tokens[0]!, {
+        action: 'play',
+        card: hands[1]![0]!.id,
+      });
       assert.equal(wrongCard.ok, false);
       const legal = await seats[0]!.send(tokens[0]!, { action: 'play', card: hands[0]![0]!.id });
       assert.ok(legal.ok, legal.error ?? '');
@@ -119,6 +154,15 @@ test('salas reales: 1v1, 2v2, 3v3, manos privadas, turnos y reconexión', async 
       assert.deepEqual(back.room!.game!.hand, hands[1]);
       const secondPlay = await resumed.send(tokens[1]!, { action: 'play', card: hands[1]![0]!.id });
       assert.ok(secondPlay.ok, secondPlay.error ?? '');
+      if (size === 2) {
+        assert.ok((await seats[0]!.send(tokens[0]!, { action: 'fold' })).ok);
+        await new Promise((resolve) => setTimeout(resolve, 4300));
+        // Any participant's poll advances the hand; the creator need not be online.
+        const advanced = await seats[1]!.send(tokens[1]!, { action: 'poll' });
+        assert.equal(advanced.room?.game?.round, 2);
+        assert.equal(advanced.room?.game?.status, 'playing');
+        assert.deepEqual(advanced.room?.game?.trickPlays, []);
+      }
     }
   } finally {
     server.kill();

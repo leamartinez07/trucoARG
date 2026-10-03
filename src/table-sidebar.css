@@ -1,0 +1,183 @@
+.scoreboard {
+  padding: 16px;
+}
+.score-lines {
+  display: grid;
+  gap: 11px;
+  margin-top: 13px;
+}
+.score-line {
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e5ecec;
+}
+.score-line-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #365467;
+}
+.score-line-head strong {
+  color: #276b8a;
+  font-size: 22px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.score-team-1 .score-line-head strong {
+  color: #92693e;
+}
+.score-halves {
+  margin-top: 9px;
+}
+.score-half > span {
+  color: #6c8191;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.score-half-active > span {
+  color: #276b8a;
+}
+.score-half-divider {
+  position: relative;
+  height: 19px;
+  margin: 8px 0 4px;
+  color: #8da2ae;
+  text-align: center;
+  font-size: 10px;
+}
+.score-half-divider::before {
+  content: '';
+  position: absolute;
+  top: 8px;
+  left: 0;
+  right: 0;
+  border-top: 1px solid #adc2cf;
+}
+.score-half-divider span {
+  position: relative;
+  padding: 0 8px;
+  background: #fff;
+}
+.matchstick-tally {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  min-height: 31px;
+  gap: 5px;
+  margin-top: 6px;
+}
+.matchstick-empty {
+  color: #a6b4b9;
+  font-size: 20px;
+  line-height: 1;
+}
+.matchstick-group {
+  position: relative;
+  display: inline-flex;
+  width: 34px;
+  height: 34px;
+}
+.matchstick {
+  position: absolute;
+  display: block;
+  width: 3px;
+  height: 26px;
+  border-radius: 2px;
+  background: #bf8851;
+  box-shadow: 1px 1px 1px #4f38252b;
+}
+.matchstick:nth-child(1) {
+  left: 15px;
+  top: -9px;
+  transform: rotate(90deg);
+}
+.matchstick:nth-child(2) {
+  right: 2px;
+  top: 4px;
+}
+.matchstick:nth-child(3) {
+  left: 15px;
+  top: 17px;
+  transform: rotate(90deg);
+}
+.matchstick:nth-child(4) {
+  left: 2px;
+  top: 4px;
+}
+.matchstick::before {
+  content: '';
+  position: absolute;
+  top: -3px;
+  left: -1px;
+  width: 5px;
+  height: 6px;
+  border-radius: 3px 3px 2px 2px;
+  background: #ad5542;
+}
+.matchstick-fifth {
+  top: 0;
+  left: 15px;
+  height: 34px;
+  transform: rotate(-42deg);
+}
+.score-footer {
+  margin-top: 1px;
+}
+.trick-track {
+  margin-top: 13px;
+  padding-top: 12px;
+}
+.chat-panel {
+  min-width: 0;
+  padding: 15px;
+  border: 1px solid #d8e2e7;
+  border-radius: 5px;
+  background: #fff;
+}
+.chat-panel .sidebar-title > svg {
+  color: #6c8795;
+}
+.chat-messages {
+  height: 124px;
+  max-height: none;
+  margin: 13px 0;
+  padding-right: 4px;
+  color: #45606d;
+}
+.chat-messages p {
+  margin: 0 0 9px;
+}
+.chat-messages strong {
+  color: #205d7c;
+}
+.chat-panel form {
+  align-items: stretch;
+}
+.chat-panel input {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  padding: 9px 10px;
+}
+.chat-panel form button {
+  display: grid;
+  place-items: center;
+  min-width: 36px;
+  border-color: #276b8a;
+  background: #276b8a;
+  color: #fff;
+}
+.chat-panel form button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.chat-practice-note {
+  margin-top: 12px;
+  color: #6b818d;
+  font-size: 12px;
+  line-height: 1.4;
+}

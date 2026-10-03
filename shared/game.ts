@@ -25,6 +25,7 @@ export type Game = {
   trickLeader: number;
   plays: Play[];
   table: Play[];
+  trickPlays: Play[][];
   tricks: (number | null)[];
   stake: number;
   raiseTeam: number | null;
@@ -78,11 +79,7 @@ export function roundWinner(tricks: (number | null)[], manoTeam: number): number
   if (tricks.length === 3) return c ?? a ?? b ?? manoTeam;
   return null;
 }
-export function createGame(
-  players: Player[],
-  target = 30,
-  random: Random = secureRandom,
-): Game {
+export function createGame(players: Player[], target = 30, random: Random = secureRandom): Game {
   const g: Game = {
     players,
     hands: [],
@@ -94,6 +91,7 @@ export function createGame(
     trickLeader: 0,
     plays: [],
     table: [],
+    trickPlays: [],
     tricks: [],
     stake: 1,
     raiseTeam: null,
@@ -123,6 +121,7 @@ export function deal(g: Game, random: Random = secureRandom, rotate = true) {
     trickLeader: g.mano,
     plays: [],
     table: [],
+    trickPlays: [],
     tricks: [],
     stake: 1,
     raiseTeam: null,
@@ -160,8 +159,11 @@ export function playCard(g: Game, seat: number, id: string) {
   if (index < 0) throw Error('Esa carta no está en tu mano.');
   const [card] = g.hands[seat].splice(index, 1);
   const play = { seat, card };
+  // Legacy rooms still have their latest visible trick in `table`.
+  g.trickPlays ??= visibleTricks(g);
   g.plays.push(play);
   g.table = [...g.plays];
+  g.trickPlays[g.tricks.length] = [...g.plays];
   addLog(g, `${g.players[seat].name} tiró ${card.value} de ${card.suit}.`);
   if (g.plays.length < g.players.length) {
     g.turn = (seat + 1) % g.players.length;
@@ -187,14 +189,29 @@ export function playCard(g: Game, seat: number, id: string) {
 export function canEnvido(g: Game, seat: number) {
   return !g.envidoDone && g.tricks.length === 0 && g.hands[seat].length === 3;
 }
+export function visibleTricks(
+  g: Pick<Game, 'trickPlays' | 'table' | 'tricks' | 'plays'>,
+): Play[][] {
+  if (g.trickPlays) return g.trickPlays;
+  const result: Play[][] = [];
+  if (g.table.length)
+    result[g.plays.length ? g.tricks.length : Math.max(0, g.tricks.length - 1)] = g.table;
+  return result;
+}
 export function callBid(g: Game, seat: number, name: BidName) {
+  if (!['envido', 'real envido', 'falta envido', 'truco', 'retruco', 'vale cuatro'].includes(name))
+    throw Error('Canto inválido.');
   if (g.status !== 'playing') throw Error('La mano terminó.');
   const team = g.players[seat].team;
   const kind = name.includes('envido') ? 'envido' : 'truco';
   const old = g.bid;
   if (old?.team === team) throw Error('Tiene que responder el otro equipo.');
+  if (!old && g.turn !== seat) throw Error('Esperá tu turno para cantar.');
   if (kind === 'envido') {
-    if (!canEnvido(g, seat)) throw Error('El envido se canta antes de tirar tu primera carta.');
+    // A player who already opened the first trick may still answer an envido
+    // by raising it. The three-card restriction applies only to a new call.
+    if (old?.kind !== 'envido' && !canEnvido(g, seat))
+      throw Error('El envido se canta antes de tirar tu primera carta.');
     if (old?.kind === 'truco') {
       if (old.name !== 'truco') throw Error('El envido ya pasó.');
       g.suspended = old;

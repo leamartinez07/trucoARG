@@ -675,7 +675,7 @@ svg {
   transform: translateX(-50%);
 }
 .seats-4 .seat-1 {
-  left: 14px;
+  right: 14px;
   top: 43%;
 }
 .seats-4 .seat-2 {
@@ -684,15 +684,15 @@ svg {
   transform: translateX(-50%);
 }
 .seats-4 .seat-3 {
-  right: 14px;
+  left: 14px;
   top: 43%;
 }
 .seats-6 .seat-1 {
-  left: 16px;
+  right: 16px;
   top: 58%;
 }
 .seats-6 .seat-2 {
-  left: 17%;
+  right: 17%;
   top: 24px;
 }
 .seats-6 .seat-3 {
@@ -701,11 +701,11 @@ svg {
   transform: translateX(-50%);
 }
 .seats-6 .seat-4 {
-  right: 17%;
+  left: 17%;
   top: 24px;
 }
 .seats-6 .seat-5 {
-  right: 16px;
+  left: 16px;
   top: 58%;
 }
 .backs {
@@ -1552,25 +1552,25 @@ dialog p {
     font-size: 9px;
   }
   .seats-4 .seat-1 {
-    left: 3px;
-  }
-  .seats-4 .seat-3 {
     right: 3px;
   }
-  .seats-6 .seat-1 {
-    left: 4px;
-    top: 53%;
+  .seats-4 .seat-3 {
+    left: 3px;
   }
-  .seats-6 .seat-5 {
+  .seats-6 .seat-1 {
     right: 4px;
     top: 53%;
   }
+  .seats-6 .seat-5 {
+    left: 4px;
+    top: 53%;
+  }
   .seats-6 .seat-2 {
-    left: 11%;
+    right: 11%;
     top: 23px;
   }
   .seats-6 .seat-4 {
-    right: 11%;
+    left: 11%;
     top: 23px;
   }
   .seats-6 .seat-3 {

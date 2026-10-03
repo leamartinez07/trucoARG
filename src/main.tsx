@@ -5,12 +5,12 @@ import { Profile } from './Profile.tsx';
 import {
   ArrowUpRight,
   ArrowRight,
-  ChevronDown,
   Copy,
   Check,
   X,
   Volume2,
   VolumeX,
+  Music2,
   Users,
   MessageCircle,
   BookOpen,
@@ -18,7 +18,6 @@ import {
   Send,
   LogOut,
   Radio,
-  Spade,
 } from 'lucide-react';
 import {
   createGame,
@@ -30,10 +29,18 @@ import {
   answerBid,
   fold,
 } from '../shared/game.ts';
+import { relativeSeat, playedPosition, pileDirection, orderedSeatCards } from './table-layout.ts';
+import { gameNotice } from './game-notice.ts';
+import type { GameNotice } from './game-notice.ts';
 import type { Game, View, Player, Card, BidName } from '../shared/game.ts';
 import './style.css';
 import './light.css';
+import './table-cards.css';
+import './table-sidebar.css';
+import './brand.css';
+import { playCardSound, playCallSound, unlockSounds } from './sounds.ts';
 import { Lobby } from './Lobby.tsx';
+import { readLocalAvatar, saveLocalAvatar } from './local-avatar.ts';
 import type { PublicTable } from './Lobby.tsx';
 
 type Room = {
@@ -59,6 +66,27 @@ function CardFace({ card, ...props }: { card: Card } & React.ImgHTMLAttributes<H
     />
   );
 }
+function MatchstickTally({ count }: { count: number }) {
+  return (
+    <div className="matchstick-tally" role="img" aria-label={`${count} puntos en palitos`}>
+      {count === 0 ? (
+        <span className="matchstick-empty">—</span>
+      ) : (
+        Array.from({ length: Math.ceil(count / 5) }, (_, group) => {
+          const sticks = Math.min(5, count - group * 5);
+          return (
+            <span className="matchstick-group" key={group} aria-hidden="true">
+              {Array.from({ length: Math.min(4, sticks) }, (_, stick) => (
+                <i className="matchstick" key={stick} />
+              ))}
+              {sticks === 5 && <i className="matchstick matchstick-fifth" />}
+            </span>
+          );
+        })
+      )}
+    </div>
+  );
+}
 function App() {
   const [size, setSize] = useState(4),
     [target, setTarget] = useState(30),
@@ -66,21 +94,51 @@ function App() {
     [code, setCode] = useState(new URLSearchParams(location.search).get('mesa') || '');
   const [tables, setTables] = useState<PublicTable[]>([]);
   const [page, setPage] = useState<'tables' | 'profile'>('tables');
+  const [avatar, setAvatar] = useState<string | null>(readLocalAvatar);
   const [room, setRoom] = useState<Room | null>(null),
     [local, setLocal] = useState<View | null>(null),
     [dialog, setDialog] = useState<'rules' | 'discord' | null>(null),
     [toast, setToast] = useState(''),
     [busy, setBusy] = useState(false),
     [connected, setConnected] = useState(false),
-    [sound, setSound] = useState(true),
+    [sound, setSound] = useState(() => localStorage.getItem('truco-sound') !== 'off'),
+    [music, setMusic] = useState(false),
     [copied, setCopied] = useState(false),
     [chatText, setChatText] = useState(''),
-    [showChat, setShowChat] = useState(false);
+    [notice, setNotice] = useState<GameNotice | null>(null);
   const localRef = useRef<Game | null>(null),
+    noticeKeyRef = useRef(''),
+    previousScoresRef = useRef<{ scope: string; scores: number[] } | null>(null),
+    previousPlaysRef = useRef<{ scope: string; round: number; count: number } | null>(null),
     toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null),
-    dialogRef = useRef<HTMLDialogElement>(null);
+    dialogRef = useRef<HTMLDialogElement>(null),
+    musicRef = useRef<HTMLAudioElement>(null),
+    chatMessagesRef = useRef<HTMLDivElement>(null);
   const g = room?.game ?? local;
   const inTable = Boolean(room || local);
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [inTable, page]);
+  useEffect(() => {
+    if (!inTable) {
+      musicRef.current?.pause();
+      setMusic(false);
+    }
+  }, [inTable]);
+  useEffect(() => {
+    if (!sound) return;
+    const unlock = () => {
+      unlockSounds();
+      window.removeEventListener('pointerdown', unlock);
+      window.removeEventListener('keydown', unlock);
+    };
+    window.addEventListener('pointerdown', unlock, { once: true });
+    window.addEventListener('keydown', unlock, { once: true });
+    return () => {
+      window.removeEventListener('pointerdown', unlock);
+      window.removeEventListener('keydown', unlock);
+    };
+  }, [sound]);
   function notify(message: string) {
     setToast(message);
     if (toastTimer.current) clearTimeout(toastTimer.current);
@@ -119,6 +177,10 @@ function App() {
     else dialogRef.current?.close();
   }, [dialog]);
   useEffect(() => {
+    const messages = chatMessagesRef.current;
+    if (messages) messages.scrollTop = messages.scrollHeight;
+  }, [room?.chat.length]);
+  useEffect(() => {
     if (!local) return;
     const timer = setInterval(() => {
       const game = localRef.current;
@@ -128,6 +190,63 @@ function App() {
     }, 1000);
     return () => clearInterval(timer);
   }, [Boolean(local)]);
+  useEffect(() => {
+    if (local?.status !== 'round-end') return;
+    const round = local.round;
+    const timer = setTimeout(() => {
+      const game = localRef.current;
+      if (game?.status === 'round-end' && game.round === round) {
+        deal(game);
+        setLocal(view(game, 0));
+      }
+    }, 4000);
+    return () => clearTimeout(timer);
+  }, [local?.status, local?.round]);
+  useEffect(() => {
+    if (!g) {
+      noticeKeyRef.current = '';
+      previousScoresRef.current = null;
+      setNotice(null);
+      return;
+    }
+    const scope = room?.code ?? 'practice';
+    const previous = previousScoresRef.current;
+    const buenas =
+      g.target > 15 && previous?.scope === scope
+        ? g.scores.findIndex((points, team) => previous.scores[team] < 15 && points >= 15)
+        : -1;
+    previousScoresRef.current = { scope, scores: [...g.scores] };
+    const key = [scope, g.round, g.status, g.bid?.name, g.message, ...g.scores].join('|');
+    if (noticeKeyRef.current === key) return;
+    noticeKeyRef.current = key;
+    const current = gameNotice(g);
+    setNotice(
+      current && buenas >= 0
+        ? {
+            ...current,
+            milestone: `${buenas === g.players[g.seat].team ? 'Tu equipo' : 'El otro equipo'} entró en las buenas`,
+          }
+        : current,
+    );
+    if (!current) return;
+    if (current.kind === 'call' && sound) playCallSound();
+    const timer = setTimeout(() => setNotice(null), 3250);
+    return () => clearTimeout(timer);
+  }, [room?.code, g?.round, g?.status, g?.message, g?.bid?.name, g?.scores[0], g?.scores[1]]);
+  useEffect(() => {
+    if (!g) {
+      previousPlaysRef.current = null;
+      return;
+    }
+    const scope = room?.code ?? 'practice';
+    const plays = g.trickPlays?.flat() ?? g.table;
+    const previous = previousPlaysRef.current;
+    if (sound && previous?.scope === scope && previous.round === g.round) {
+      for (const play of plays.slice(previous.count))
+        if (play.seat !== g.seat) playCardSound();
+    }
+    previousPlaysRef.current = { scope, round: g.round, count: plays.length };
+  }, [g?.trickPlays, g?.table, g?.round, g?.seat, room?.code, sound]);
   function command(data: Record<string, unknown>) {
     if (localRef.current) {
       try {
@@ -186,9 +305,12 @@ function App() {
       );
   }
   function practice() {
+    const playerName = name.trim() || 'Vos';
+    const botNames = ['Tito', 'La Negra', 'Rolo', 'Luli', 'Cacho', 'Mora', 'Fede']
+      .filter((botName) => botName.toLocaleLowerCase() !== playerName.toLocaleLowerCase());
     const players: Player[] = Array.from({ length: size }, (_, i) => ({
       id: `local-${i}`,
-      name: i === 0 ? name.trim() || 'Vos' : ['Tito', 'La Negra', 'Rolo', 'Luli', 'Cacho'][i - 1],
+      name: i === 0 ? playerName : botNames[i - 1],
       team: i % 2,
       bot: i !== 0,
       connected: true,
@@ -204,7 +326,6 @@ function App() {
       command({ action: 'leave' });
       sessionStorage.removeItem('deuna-session');
     }
-    setShowChat(false);
   }
   async function copyInvite() {
     if (!room) return;
@@ -225,23 +346,25 @@ function App() {
       ] as BidName)
     : 'truco';
   const currentScore = g ? g.scores : [0, 0];
+  const gameTarget = g?.target ?? room?.target ?? target;
   return (
-    <div className="app-shell">
+    <div className={`app-shell ${inTable ? 'app-game' : page === 'profile' ? 'app-profile' : 'app-lobby'}`}>
+      <audio ref={musicRef} src="/audio/quiet-guitar.ogg" preload="none" loop />
       <header className="site-header">
         <button
           className="wordmark"
           onClick={() => {
             if (inTable) leave();
+            setPage('tables');
           }}
-          aria-label="Truco argentino, inicio"
+          aria-label="Faltaenvidoytruco, inicio"
         >
-          <span className="arg-flag" />
-          <strong>TRUCO</strong>
-          <span className="brand-sub">ARGENTINO</span>
+          <strong>Faltaenvidoytruco</strong>
+          <span className="wordmark-flower" aria-hidden="true" />
         </button>
         <nav>
           <button
-            className={!inTable ? 'nav-active' : ''}
+            className={!inTable && page === 'tables' ? 'nav-active' : ''}
             onClick={() => {
               if (inTable) leave();
               setPage('tables');
@@ -249,13 +372,41 @@ function App() {
           >
             Mesas
           </button>
-          <button className={page === 'profile' ? 'nav-active' : ''} onClick={() => setPage('profile')}>Mi perfil</button>
+          <button
+            className={page === 'profile' ? 'nav-active' : ''}
+            onClick={() => setPage('profile')}
+          >
+            Mi perfil
+          </button>
           <button aria-label="Reglas" onClick={() => setDialog('rules')}>
             <BookOpen size={16} />
             <span>Reglas</span>
           </button>
         </nav>
         <div className="header-tools">
+          {inTable && (
+            <button
+              className="music-toggle"
+              aria-label={music ? 'Pausar música' : 'Reproducir música de fondo'}
+              aria-pressed={music}
+              title={music ? 'Pausar música' : 'Música de fondo'}
+              onClick={() => {
+                const player = musicRef.current;
+                if (!player) return;
+                if (music) {
+                  player.pause();
+                  setMusic(false);
+                } else {
+                  player.volume = 0.055;
+                  void player.play().then(() => setMusic(true)).catch(() =>
+                    notify('No se pudo reproducir la música en este navegador.'),
+                  );
+                }
+              }}
+            >
+              <Music2 size={18} />
+            </button>
+          )}
           <button
             className="discord-control"
             aria-label="Discord"
@@ -267,13 +418,26 @@ function App() {
           <button
             className="sound-toggle"
             aria-label={sound ? 'Silenciar sonidos' : 'Activar sonidos'}
-            onClick={() => setSound(!sound)}
+            onClick={() => setSound((value) => {
+              localStorage.setItem('truco-sound', value ? 'off' : 'on');
+              if (!value) unlockSounds();
+              return !value;
+            })}
           >
             {sound ? <Volume2 size={18} /> : <VolumeX size={18} />}
           </button>
         </div>
       </header>
-      {page === 'profile' ? <Profile name={name} notify={notify} /> : !inTable ? (
+      {page === 'profile' ? (
+        <Profile name={name} notify={notify} avatar={avatar} onAvatarChange={(value) => {
+          try {
+            saveLocalAvatar(value);
+            setAvatar(value);
+          } catch {
+            notify('No se pudo guardar la foto en este navegador.');
+          }
+        }} />
+      ) : !inTable ? (
         <Lobby
           name={name}
           setName={setName}
@@ -313,7 +477,7 @@ function App() {
               {local && <span className="practice-badge">CON BOTS</span>}
             </div>
           </div>
-          <div className="game-layout">
+          <div className={`game-layout ${g?.players.length === 6 ? 'game-layout-wide' : ''}`}>
             <section className="table-wrap">
               <div className="table-top">
                 <span>
@@ -321,24 +485,37 @@ function App() {
                   {local ? 'PRÁCTICA LOCAL' : connected ? 'MESA CONECTADA' : 'RECONECTANDO…'}
                 </span>
                 <span>
+                  {g && (
+                    <span className="compact-self-name">{g.players[g.seat].name} (vos) · </span>
+                  )}
                   {g ? `MANO ${String(g.round).padStart(2, '0')}` : 'ESPERANDO A LA BANDA'}
                 </span>
               </div>
               <div className={`playing-table seats-${g?.players.length ?? room?.size ?? size}`}>
+                {notice && (
+                  <div className={`game-notice notice-${notice.kind}`} role="status" aria-live="polite">
+                    <span className="game-notice-kicker">{notice.kicker}</span>
+                    <strong>{notice.title}</strong>
+                    {notice.detail && <span className="game-notice-detail">{notice.detail}</span>}
+                    {notice.milestone && (
+                      <span className="game-notice-milestone">{notice.milestone}</span>
+                    )}
+                  </div>
+                )}
                 {g ? (
                   <>
                     <div className="table-watermark">
-                      de una<span>TRUCO ARGENTINO</span>
+                      Faltaenvidoytruco<span>TRUCO ENTRE AMIGOS</span>
                     </div>
                     {g.players.map((p, i) => {
-                      const relative = (i - g.seat + g.players.length) % g.players.length;
+                      const relative = relativeSeat(i, g.seat, g.players.length);
                       return (
                         <div
                           key={p.id}
                           className={`seat seat-${relative} ${g.turn === i && g.status === 'playing' ? 'seat-turn' : ''} ${relative === 0 ? 'self-seat' : ''}`}
                         >
                           <div className={`avatar team-${p.team}`}>
-                            {p.name.slice(0, 1).toUpperCase()}
+                            {i === g.seat && avatar ? <img className="avatar-photo" src={avatar} alt="" /> : p.name.slice(0, 1).toUpperCase()}
                             {g.mano === i && <span className="mano-mark">M</span>}
                           </div>
                           <span className="seat-name">
@@ -355,30 +532,39 @@ function App() {
                         </div>
                       );
                     })}
-                    <div className="played-cards">
-                      {g.table.map((p, i) => (
+                    {g.players.map((player, seat) => {
+                      const relative = relativeSeat(seat, g.seat, g.players.length);
+                      const cards = orderedSeatCards(g, seat);
+                      if (!cards.length) return null;
+                      return (
                         <div
-                          key={`${g.round}-${p.seat}-${p.card.id}`}
-                          className="played"
-                          style={{ transform: `rotate(${((i % 3) - 1) * 9}deg)` }}
+                          key={player.id}
+                          className={`played-pile pile-${pileDirection(relative, g.players.length)}`}
+                          data-seat={seat}
+                          data-relative-seat={relative}
+                          style={playedPosition(relative, g.players.length)}
+                          role="group"
+                          aria-label={`${player.name}, cartas jugadas`}
                         >
-                          <CardFace card={p.card} />
-                          <span>{g.players[p.seat].name}</span>
+                          <div className="played-pile-cards">
+                            {cards.map((play) => (
+                              <div
+                                className="played-card"
+                                key={play.card.id}
+                                data-trick={play.trick + 1}
+                                tabIndex={0}
+                                aria-label={`${player.name}: ${play.card.value} de ${play.card.suit}, ${play.trick + 1}ª baza`}
+                              >
+                                <CardFace
+                                  card={play.card}
+                                  title={`${player.name} · ${play.trick + 1}ª baza`}
+                                />
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                      ))}
-                    </div>
-                    {g.table.length === 0 && (
-                      <div className="table-center-message">
-                        <Spade size={24} />
-                        <span>
-                          {g.bid
-                            ? 'Hay un canto en la mesa.'
-                            : g.status === 'playing'
-                              ? 'Recién repartidas.'
-                              : 'Terminó la mano.'}
-                        </span>
-                      </div>
-                    )}
+                      );
+                    })}
                     <div className="my-hand">
                       {g.hand.map((card, i) => (
                         <button
@@ -392,24 +578,7 @@ function App() {
                           aria-label={`Tirar ${card.value} de ${card.suit}`}
                           onClick={() => {
                             command({ action: 'play', card: card.id });
-                            if (sound) {
-                              try {
-                                const ctx = new AudioContext();
-                                const osc = ctx.createOscillator();
-                                const gain = ctx.createGain();
-                                osc.connect(gain);
-                                gain.connect(ctx.destination);
-                                osc.frequency.value = 440;
-                                gain.gain.setValueAtTime(0.035, ctx.currentTime);
-                                gain.gain.exponentialRampToValueAtTime(
-                                  0.001,
-                                  ctx.currentTime + 0.08,
-                                );
-                                osc.start();
-                                osc.stop(ctx.currentTime + 0.08);
-                                osc.onended = () => void ctx.close();
-                              } catch {}
-                            }
+                            if (sound) playCardSound();
                           }}
                         >
                           <CardFace card={card} />
@@ -426,6 +595,10 @@ function App() {
                     </div>
                     <h2>Esperando jugadores</h2>
                     <p>Compartí el código o el link de la mesa.</p>
+                    <div className="waiting-loader" role="status" aria-live="polite">
+                      <span className="waiting-loader-ring" aria-hidden="true" />
+                      <span>Esperando que se sumen...</span>
+                    </div>
                     <div className="waiting-players">
                       {Array.from({ length: room!.size }, (_, i) => (
                         <div key={i} className={room!.players[i] ? 'occupied' : ''}>
@@ -453,6 +626,119 @@ function App() {
                     )}
                   </div>
                 )}
+                {g && g.status !== 'round-end' && (
+                  <div className="game-actions">
+                    {g.status === 'finished' ? (
+                      <button className="primary" onClick={leave}>
+                        Volver al club <ArrowRight size={17} />
+                      </button>
+                    ) : respond ? (
+                      <>
+                        <span className="answer-label">¿Qué decís?</span>
+                        <button
+                          className="primary"
+                          onClick={() => command({ action: 'answer', accept: true })}
+                        >
+                          ¡Quiero!
+                        </button>
+                        <button
+                          className="outline"
+                          onClick={() => command({ action: 'answer', accept: false })}
+                        >
+                          No quiero
+                        </button>
+                        {g.bid?.kind === 'truco' && g.bid.points < 4 && (
+                          <button
+                            className="call"
+                            onClick={() => command({ action: 'bid', name: nextBid })}
+                          >
+                            {nextBid}
+                          </button>
+                        )}
+                        {g.bid?.name === 'truco' &&
+                          !g.envidoDone &&
+                          g.tricks.length === 0 &&
+                          g.hand.length === 3 && (
+                            <button
+                              className="call"
+                              onClick={() => command({ action: 'bid', name: 'envido' })}
+                            >
+                              Envido primero
+                            </button>
+                          )}
+                        {g.bid?.kind === 'envido' && g.bid.name !== 'falta envido' && (
+                          <>
+                            {g.bid.name === 'envido' && g.bid.envidos < 2 && (
+                              <button
+                                className="call"
+                                onClick={() => command({ action: 'bid', name: 'envido' })}
+                              >
+                                Envido
+                              </button>
+                            )}
+                            {g.bid.name === 'envido' && (
+                              <button
+                                className="call"
+                                onClick={() => command({ action: 'bid', name: 'real envido' })}
+                              >
+                                Real envido
+                              </button>
+                            )}
+                            <button
+                              className="call"
+                              onClick={() => command({ action: 'bid', name: 'falta envido' })}
+                            >
+                              Falta envido
+                            </button>
+                          </>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        {canPlay &&
+                          !g.envidoDone &&
+                          g.tricks.length === 0 &&
+                          g.hand.length === 3 &&
+                          !g.bid && (
+                            <>
+                              <div className="bid-buttons">
+                                {(['envido', 'real envido', 'falta envido'] as BidName[]).map(
+                                  (b) => (
+                                    <button
+                                      key={b}
+                                      className="call"
+                                      onClick={() => command({ action: 'bid', name: b })}
+                                    >
+                                      {b}
+                                    </button>
+                                  ),
+                                )}
+                              </div>
+                              <div className="bid-divider" />
+                            </>
+                          )}
+                        {canPlay &&
+                          g.stake < 4 &&
+                          (g.raiseTeam === null || g.raiseTeam === ownTeam) && (
+                            <button
+                              className="primary truco-call"
+                              onClick={() => command({ action: 'bid', name: nextBid })}
+                            >
+                              ¡{nextBid}!
+                            </button>
+                          )}
+                        <button
+                          className="fold"
+                          disabled={Boolean(g.bid)}
+                          onClick={() => command({ action: 'fold' })}
+                        >
+                          <Flag size={15} />
+                          Al mazo
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
               <div className="table-status">
                 <span className="status-pulse" />
@@ -475,106 +761,6 @@ function App() {
                   </span>
                 )}
               </div>
-              {g && (
-                <div className="game-actions">
-                  {g.status !== 'playing' ? (
-                    <>
-                      <span>{g.message}</span>
-                      {g.status === 'round-end' && (local || g.seat === 0) && (
-                        <button className="primary" onClick={() => command({ action: 'next' })}>
-                          Siguiente mano <ArrowRight size={17} />
-                        </button>
-                      )}
-                      {g.status === 'finished' && (
-                        <button className="primary" onClick={leave}>
-                          Volver al club <ArrowRight size={17} />
-                        </button>
-                      )}
-                    </>
-                  ) : respond ? (
-                    <>
-                      <span className="answer-label">¿Qué decís?</span>
-                      <button
-                        className="primary"
-                        onClick={() => command({ action: 'answer', accept: true })}
-                      >
-                        ¡Quiero!
-                      </button>
-                      <button
-                        className="outline"
-                        onClick={() => command({ action: 'answer', accept: false })}
-                      >
-                        No quiero
-                      </button>
-                      {g.bid?.kind === 'truco' && g.bid.points < 4 && (
-                        <button
-                          className="call"
-                          onClick={() => command({ action: 'bid', name: nextBid })}
-                        >
-                          {nextBid}
-                        </button>
-                      )}
-                      {g.bid?.name === 'truco' &&
-                        !g.envidoDone &&
-                        g.tricks.length === 0 &&
-                        g.hand.length === 3 && (
-                          <button
-                            className="call"
-                            onClick={() => command({ action: 'bid', name: 'envido' })}
-                          >
-                            Envido primero
-                          </button>
-                        )}
-                      {g.bid?.kind === 'envido' && g.bid.name !== 'falta envido' && (
-                        <button
-                          className="call"
-                          onClick={() => command({ action: 'bid', name: 'falta envido' })}
-                        >
-                          Falta envido
-                        </button>
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      <div className="bid-buttons">
-                        {(['envido', 'real envido', 'falta envido'] as BidName[]).map((b) => (
-                          <button
-                            key={b}
-                            className="call"
-                            disabled={
-                              !(!g.envidoDone && g.tricks.length === 0 && g.hand.length === 3) ||
-                              Boolean(g.bid)
-                            }
-                            onClick={() => command({ action: 'bid', name: b })}
-                          >
-                            {b}
-                          </button>
-                        ))}
-                      </div>
-                      <div className="bid-divider" />
-                      <button
-                        className="primary truco-call"
-                        disabled={
-                          Boolean(g.bid) ||
-                          g.stake >= 4 ||
-                          (g.raiseTeam !== null && g.raiseTeam !== ownTeam)
-                        }
-                        onClick={() => command({ action: 'bid', name: nextBid })}
-                      >
-                        ¡{nextBid}!
-                      </button>
-                      <button
-                        className="fold"
-                        disabled={Boolean(g.bid)}
-                        onClick={() => command({ action: 'fold' })}
-                      >
-                        <Flag size={15} />
-                        Al mazo
-                      </button>
-                    </>
-                  )}
-                </div>
-              )}
             </section>
             <aside className="score-sidebar">
               <div className="scoreboard">
@@ -582,35 +768,47 @@ function App() {
                   <span>EL ANOTADOR</span>
                   <span>✦</span>
                 </div>
-                <div className="scores">
-                  <div>
-                    <span>Nosotros</span>
-                    <strong>{currentScore[ownTeam]}</strong>
+                <div className="score-sheet">
+                  <div className="score-sheet-head">
+                    {[ownTeam, 1 - ownTeam].map((team, index) => (
+                      <div key={team}>
+                        <span>
+                          {(g?.players.length ?? room?.size ?? size) === 2
+                            ? index === 0
+                              ? 'Vos'
+                              : g?.players.find((player) => player.team === team)?.name ?? 'Rival'
+                            : index === 0
+                              ? 'Nosotros'
+                              : 'Ellos'}
+                        </span>
+                        <strong>{currentScore[team]}</strong>
+                      </div>
+                    ))}
                   </div>
-                  <span className="score-slash">/</span>
-                  <div>
-                    <span>Ellos</span>
-                    <strong>{currentScore[1 - ownTeam]}</strong>
-                  </div>
-                </div>
-                <div className="score-progress">
-                  {currentScore.map((_, team) => (
-                    <div key={team}>
-                      <span
-                        style={{
-                          width: `${Math.min(100, (currentScore[team] / (g?.target ?? target)) * 100)}%`,
-                        }}
-                      />
+                  <div className="score-phase">
+                    <span>{gameTarget > 15 ? 'Malas' : 'Tantos'}</span>
+                    <div className="score-phase-tallies">
+                      {[ownTeam, 1 - ownTeam].map((team) => (
+                        <MatchstickTally key={team} count={Math.min(15, currentScore[team])} />
+                      ))}
                     </div>
-                  ))}
-                </div>
-                <div className="score-footer">
-                  <span>
-                    {Math.max(...currentScore) >= (g?.target ?? target) / 2
-                      ? 'EN LAS BUENAS'
-                      : 'EN LAS MALAS'}
-                  </span>
-                  <span>A {g?.target ?? target}</span>
+                  </div>
+                  {gameTarget > 15 && (
+                    <>
+                      <div className="score-sheet-divider" />
+                      <div className="score-phase">
+                        <span>Buenas</span>
+                        <div className="score-phase-tallies">
+                          {[ownTeam, 1 - ownTeam].map((team) => (
+                            <MatchstickTally
+                              key={team}
+                              count={Math.max(0, Math.min(15, currentScore[team] - 15))}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
                 <div className="trick-track">
                   {[0, 1, 2].map((n) => (
@@ -628,6 +826,49 @@ function App() {
                     </div>
                   ))}
                 </div>
+              </div>
+              <div className="chat-panel">
+                <div className="sidebar-title">
+                  <span>CHAT DE LA MESA</span>
+                  <MessageCircle size={15} />
+                </div>
+                {room ? (
+                  <>
+                    <div className="chat-messages" ref={chatMessagesRef} aria-live="polite">
+                      {room.chat.length ? (
+                        room.chat.map((m, i) => (
+                          <p key={i}>
+                            <strong>{m.name}: </strong>
+                            {m.text}
+                          </p>
+                        ))
+                      ) : (
+                        <p>Todavía no hay mensajes. Decí algo.</p>
+                      )}
+                    </div>
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        if (!chatText.trim()) return;
+                        command({ action: 'chat', text: chatText });
+                        setChatText('');
+                      }}
+                    >
+                      <input
+                        aria-label="Mensaje para la mesa"
+                        value={chatText}
+                        maxLength={180}
+                        onChange={(e) => setChatText(e.target.value)}
+                        placeholder="Escribí a la mesa…"
+                      />
+                      <button aria-label="Enviar mensaje" disabled={!chatText.trim()}>
+                        <Send size={16} />
+                      </button>
+                    </form>
+                  </>
+                ) : (
+                  <p className="chat-practice-note">Disponible en mesas con otras personas.</p>
+                )}
               </div>
               <div className="voice-card">
                 <button onClick={() => setDialog('discord')}>
@@ -650,47 +891,6 @@ function App() {
                   )}
                 </div>
               </div>
-              {room && (
-                <button className="chat-toggle" onClick={() => setShowChat(!showChat)}>
-                  <MessageCircle size={16} />
-                  Chat de la mesa
-                  <ChevronDown size={15} />
-                </button>
-              )}
-              {showChat && room && (
-                <div className="chat-panel">
-                  <div className="chat-messages" aria-live="polite">
-                    {room.chat.length ? (
-                      room.chat.map((m, i) => (
-                        <p key={i}>
-                          <strong>{m.name}: </strong>
-                          {m.text}
-                        </p>
-                      ))
-                    ) : (
-                      <p>Todavía no hay mensajes.</p>
-                    )}
-                  </div>
-                  <form
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      command({ action: 'chat', text: chatText });
-                      setChatText('');
-                    }}
-                  >
-                    <input
-                      aria-label="Mensaje para la mesa"
-                      value={chatText}
-                      maxLength={180}
-                      onChange={(e) => setChatText(e.target.value)}
-                      placeholder="Decí algo…"
-                    />
-                    <button aria-label="Enviar mensaje">
-                      <Send size={16} />
-                    </button>
-                  </form>
-                </div>
-              )}
             </aside>
           </div>
         </main>
@@ -738,31 +938,15 @@ function App() {
               responde el truco.
             </p>
             <div className="credits">
-              Cartas de{' '}
+              Baraja española de caras catalanas, B. P. Grimaud (1860).{' '}
               <a
-                href="https://commons.wikimedia.org/wiki/User:Basquetteur"
+                href="https://commons.wikimedia.org/wiki/Category:Modern_Spanish_Catalan_deck_-_Grimaud_-_1860"
                 target="_blank"
                 rel="noreferrer"
               >
-                Basquetteur
+                Colección de la BnF en Wikimedia Commons
               </a>
-              , vectorizadas por{' '}
-              <a
-                href="https://github.com/gjenkins20/spanish-playing-cards-svg"
-                target="_blank"
-                rel="noreferrer"
-              >
-                gjenkins20
-              </a>
-              .{' '}
-              <a
-                href="https://creativecommons.org/licenses/by-sa/3.0/"
-                target="_blank"
-                rel="noreferrer"
-              >
-                CC BY-SA 3.0
-              </a>
-              . Convertidas a WebP; ilustraciones sin alterar.
+              . Dominio público. Convertidas a WebP; ilustraciones históricas sin alterar.
             </div>
           </>
         ) : (

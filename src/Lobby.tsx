@@ -41,7 +41,11 @@ export function Lobby(p: Props) {
   return (
     <main className="lobby">
       <div className="lobby-heading">
-        <h1>Mesas de truco</h1>
+        <div className="lobby-title">
+          <span className="lobby-eyebrow">UNA MESA SIEMPRE ABIERTA</span>
+          <h1><span>Sentate a jugar</span></h1>
+          <p>Elegí tu mesa, repartí y jugá.</p>
+        </div>
         <span className={`connection-state ${p.connected ? 'online' : ''}`}>
           {p.connected ? (
             <>
@@ -229,13 +233,14 @@ export function Lobby(p: Props) {
               withName(() => p.command({ action: 'join', name: p.name, code: p.code }));
             }}
           >
-            <label htmlFor="room-code">Entrar con código</label>
+            <label htmlFor="room-code">Código de invitación</label>
             <div>
               <input
                 id="room-code"
-                placeholder="ABC123"
+                placeholder="Ej.: A3F7C09B2E"
+                aria-describedby="room-code-help"
                 minLength={6}
-                maxLength={6}
+                maxLength={10}
                 required
                 value={p.code}
                 onChange={(e) => p.setCode(e.target.value.toUpperCase())}
@@ -244,6 +249,9 @@ export function Lobby(p: Props) {
                 Entrar
               </button>
             </div>
+            <p className="join-help" id="room-code-help">
+              Pedíselo a quien creó la mesa. También podés entrar desde su link.
+            </p>
           </form>
         </aside>
         <section className="practice-panel">
