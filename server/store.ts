@@ -5,7 +5,8 @@ import { dirname } from 'node:path';
 
 export type Document = Record<string, unknown>;
 type Update<T> = { state: Document; result: T; archive?: Document };
-const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+const connectionString =
+  process.env.SUPABASE_DB_URL || process.env.DATABASE_URL || process.env.POSTGRES_URL;
 let pool: Pool | undefined;
 let sqlite: DatabaseSync | undefined;
 let initialized: Promise<void> | undefined;
@@ -89,5 +90,23 @@ export async function documents(table: 'truco_rooms' | 'truco_matches'): Promise
     db instanceof DatabaseSync
       ? db.prepare(`SELECT state FROM ${table}`).all()
       : (await db.query(`SELECT state FROM ${table}`)).rows;
+  return rows.map((row) => JSON.parse(String(row.state)));
+}
+
+// Solo trae las salas con actividad reciente: filtrar en la base evita descargar todas las salas viejas en cada sondeo.
+export async function recentRooms(since: number): Promise<Document[]> {
+  await ready();
+  const db = database();
+  const rows =
+    db instanceof DatabaseSync
+      ? db
+          .prepare("SELECT state FROM truco_rooms WHERE json_extract(state, '$.updated') > ?")
+          .all(since)
+      : (
+          await db.query(
+            "SELECT state FROM truco_rooms WHERE (state::jsonb->>'updated')::bigint > $1",
+            [since],
+          )
+        ).rows;
   return rows.map((row) => JSON.parse(String(row.state)));
 }
