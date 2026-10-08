@@ -3,7 +3,7 @@
   "framework": "vite",
   "buildCommand": "pnpm build",
   "outputDirectory": "dist",
-  "functions": { "api/game.ts": { "maxDuration": 30 } },
+  "functions": { "api/game.ts": { "maxDuration": 30, "regions": ["gru1"] } },
   "headers": [
     {
       "source": "/(.*)",

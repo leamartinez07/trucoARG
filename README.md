@@ -2,7 +2,7 @@
 
 Truco online para 2, 4 o 6 jugadores. La aplicación abre en la sala de mesas: entrar a una pública, crear una privada, compartir un código o jugar contra bots. Baraja española clásica de 40 cartas.
 
-Versión publicada: [truco-phi.vercel.app](https://truco-phi.vercel.app). El proyecto `truco` de Vercel está conectado a la base gratuita `truco-historial` de Neon.
+Versión publicada: [faltaenvidoytruco.vercel.app](https://faltaenvidoytruco.vercel.app). La producción usa Postgres de Supabase para las mesas y el historial.
 
 ## Ejecutar
 
@@ -21,7 +21,7 @@ pnpm build
 pnpm start
 ```
 
-En producción el servidor sirve `dist` y la API desde el mismo origen. `PORT` cambia el puerto (3001 por defecto). En Vercel, `api/game.ts` corre como función serverless y necesita `DATABASE_URL` (o `POSTGRES_URL`) apuntando a Postgres — ver "Desplegar" más abajo.
+En producción el servidor sirve `dist` y la API desde el mismo origen. `PORT` cambia el puerto (3001 por defecto). En Vercel, `api/game.ts` corre como función serverless y necesita `SUPABASE_DB_URL` apuntando a Postgres — ver "Desplegar" más abajo.
 
 ## Incluido
 
@@ -31,7 +31,7 @@ En producción el servidor sirve `dist` y la API desde el mismo origen. `PORT` c
 - Asientos y turnos en sentido antihorario, hacia la derecha. La mesa se ajusta a la altura de la pantalla; la primera carta de cada jugador va hacia el centro y las siguientes avanzan por su brazo de la cruz hacia el asiento. Los botones para cantar quedan dentro del tablero. Los carteles anuncian cantos, tantos, puntos y el resultado de la mano. La siguiente mano se reparte sola. Las respuestas atrasadas no hacen retroceder la mesa.
 - Práctica local y bots para completar salas. Los bots son básicos: no pretenden simular un jugador experto.
 - Servidor autoritativo con barajado criptográfico. Cada cliente recibe únicamente su mano, sus tantos y el estado público.
-- Persistencia en Postgres (Neon) o SQLite local: las mesas sobreviven a un reinicio del servidor y cada partida terminada queda archivada.
+- Persistencia en Postgres (Supabase en producción) o SQLite local: las mesas sobreviven a un reinicio del servidor y cada partida terminada queda archivada.
 - Perfil por jugador (clave privada guardada en el navegador, exportable/recuperable) con historial de partidas, resultado, rivales frecuentes y repaso mano por mano de las cartas y cantos.
 - Reconexión automática: la identidad depende de la clave del navegador, no de una sesión de socket, así que recargar la página no saca a nadie de la mesa.
 - Interfaz adaptable en crema y azul con un ornamento discreto, anotador dividido en malas y buenas, botones accesibles, diálogos nativos, sonidos opcionales y movimiento reducido.
@@ -46,10 +46,10 @@ Sin flor y sin pica-pica (3v3 se juega siempre en equipos). En malas, la falta e
 ## Desplegar en Vercel
 
 1. `vercel link` (o conectar el repo desde el dashboard).
-2. Agregar una base Postgres — el plan gratuito de Neon desde la pestaña Storage del proyecto en Vercel funciona directo — y confirmar que `DATABASE_URL` quedó seteada en las variables de entorno del proyecto.
+2. Crear un proyecto de Supabase y agregar a Vercel `SUPABASE_DB_URL` para Production con la cadena del **Transaction pooler** (puerto 6543). Guardarla solo como variable secreta del servidor, nunca con prefijo `VITE_`. Descargar el certificado raíz del proyecto desde Database Settings y agregar su contenido a `SUPABASE_CA_CERT` para verificar TLS. Las tablas se crean en el esquema privado `truco_private` al primer acceso. No habilitar ese esquema en la Data API de Supabase.
 3. `vercel deploy --prod` (o dejar que el deploy automático de git lo haga).
 
-Sin `DATABASE_URL` configurada, las funciones serverless de Vercel fallan al guardar partidas (no hay disco persistente para SQLite en ese entorno).
+Durante el primer acceso después de migrar, la API intenta copiar las mesas y el historial del antiguo `DATABASE_URL` de Neon a Supabase. Si Neon no permite leer por cuota, Supabase sigue operativo y la copia se reintenta, como máximo una vez por hora al arrancar una función nueva. No quitar la integración de Neon hasta verificar que las partidas antiguas se copiaron. Sin `SUPABASE_DB_URL` ni otra conexión Postgres, las funciones serverless de Vercel fallan al guardar partidas (no hay disco persistente para SQLite en ese entorno).
 
 ## Límites actuales
 

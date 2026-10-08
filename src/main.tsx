@@ -479,6 +479,11 @@ function App() {
           </div>
           <div className={`game-layout ${g?.players.length === 6 ? 'game-layout-wide' : ''}`}>
             <section className="table-wrap">
+              <div className="mobile-score" aria-label="Puntaje de la partida">
+                <span>{(g?.players.length ?? room?.size ?? size) === 2 ? 'Vos' : 'Nosotros'} <strong>{currentScore[ownTeam]}</strong></span>
+                <span className="mobile-score-divider" aria-hidden="true" />
+                <span>{(g?.players.length ?? room?.size ?? size) === 2 ? 'Rival' : 'Ellos'} <strong>{currentScore[1 - ownTeam]}</strong></span>
+              </div>
               <div className="table-top">
                 <span>
                   <i />

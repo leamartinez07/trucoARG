@@ -270,3 +270,90 @@ button:hover:not(:disabled) { filter: none; }
   .playing-table.seats-4 .played-pile[data-relative-seat='1'],
   .playing-table.seats-4 .played-pile[data-relative-seat='3'] { top: 30% !important; }
 }
+
+.mobile-score { display: none; }
+
+@media (max-width: 680px) {
+  .game-layout,.game-layout-wide { gap: 12px; }
+  .mobile-score {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    min-height: 40px;
+    margin-bottom: 9px;
+    padding: 5px 12px;
+    border: 1px solid #b8c9d9;
+    border-radius: 3px;
+    background: #fffcf2;
+    color: #2a4c75;
+    font-size: 13px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .mobile-score > span:not(.mobile-score-divider) { display: flex; align-items: baseline; gap: 8px; }
+  .mobile-score strong { color: #315c96; font-size: 22px; line-height: 1; }
+  .mobile-score > span:last-child strong { color: #956a31; }
+  .mobile-score-divider { align-self: stretch; width: 1px; background: #c5d2dd; }
+  .table-top { margin-bottom: 7px; }
+  .table-status { margin-bottom: 0; }
+  .table-status .envido-count {
+    display: block;
+    width: 100%;
+    margin: 5px 0 0 13px;
+    padding-top: 6px;
+    border-top: 1px solid #d9e1e7;
+    font-size: 12px;
+  }
+  .score-sidebar { gap: 10px; }
+  .scoreboard { padding: 15px; }
+  .score-sheet { margin-top: 9px; }
+  .score-phase { padding-block: 9px; }
+  .score-phase-tallies .matchstick-tally { gap: 5px; }
+  .score-sheet-head > div { padding-bottom: 8px; }
+  .trick-track { padding-top: 9px; }
+}
+
+@media (max-width: 460px) {
+  .game-top {
+    display: grid;
+    grid-template-columns: minmax(0,1fr) auto;
+    align-items: center;
+    gap: 4px 8px;
+  }
+  .game-top > div:first-child { min-width: 0; gap: 8px; }
+  .game-top h1 { min-width: 0; font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .back-link { flex: none; font-size: 11px; white-space: nowrap; }
+  .table-meta { min-width: 0; justify-content: flex-end; flex-wrap: wrap; gap: 4px; text-align: right; line-height: 1.2; }
+  .table-meta > span:first-child { max-width: 125px; }
+  .table-top { gap: 6px; font-size: 10px; }
+  .table-top > span:last-child { min-width: 0; text-align: right; }
+  .playing-table.seats-4 .seat-1,.playing-table.seats-4 .seat-3 { top: clamp(60px, 14%, 105px); }
+  .playing-table.seats-6 .seat-1,.playing-table.seats-6 .seat-5 { top: clamp(70px, 18%, 115px); }
+  .playing-table.seats-4 .played-pile { --pile-step-x: 20px; }
+  .playing-table.seats-4 .played-pile[data-relative-seat='1'] { left: 74% !important; }
+  .playing-table.seats-4 .played-pile[data-relative-seat='3'] { left: 26% !important; }
+  .playing-table .self-seat { bottom: 139px; }
+  .score-phase-tallies > div + div { padding-left: 10px; }
+  .score-sheet-head > div + div { padding-left: 10px; }
+  .trick-track { gap: 4px; }
+}
+
+@media (max-width: 380px) {
+  .playing-table.seats-4 .seat-1,.playing-table.seats-4 .seat-3 { top: 60px; }
+  .playing-table.seats-6 .seat-1,.playing-table.seats-6 .seat-5 { top: 70px; }
+  .playing-table.seats-4 .played-pile[data-relative-seat='1'] { left: 70% !important; }
+  .playing-table.seats-4 .played-pile[data-relative-seat='3'] { left: 30% !important; }
+  .playing-table.seats-4 .played-pile[data-relative-seat='1'],
+  .playing-table.seats-4 .played-pile[data-relative-seat='3'] { top: 43% !important; }
+  .playing-table.seats-2 .played-pile[data-relative-seat='0'],
+  .playing-table.seats-4 .played-pile[data-relative-seat='0'] { top: 43% !important; }
+  .playing-table.seats-6 .played-pile[data-relative-seat='0'] { top: 49% !important; }
+  .playing-table.seats-2 .played-pile[data-relative-seat='1'],
+  .playing-table.seats-4 .played-pile[data-relative-seat='2'] { top: 33% !important; }
+  .playing-table.seats-2 .my-hand,.playing-table.seats-4 .my-hand { bottom: 115px; }
+  .playing-table.seats-6 .my-hand { bottom: 110px; }
+  .playing-table.seats-6 .played-pile[data-relative-seat='1'],
+  .playing-table.seats-6 .played-pile[data-relative-seat='5'] { top: 48% !important; }
+  .scoreboard { padding-inline: 13px; }
+}
