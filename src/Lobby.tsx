@@ -61,88 +61,107 @@ export function Lobby(p: Props) {
         </span>
       </div>
       <div className="lobby-columns">
-        <section className="table-browser" aria-labelledby="tables-heading">
-          <div className="panel-header">
-            <h2 id="tables-heading">
-              Mesas públicas <span className="count-badge">{p.tables.length}</span>
-            </h2>
-            <span className="small-muted">Sin flor</span>
-          </div>
-          <div className="table-filters" aria-label="Filtrar mesas por jugadores">
-            {[
-              { size: 0, label: 'Todas' },
-              { size: 2, label: '1 vs 1' },
-              { size: 4, label: '2 vs 2' },
-              { size: 6, label: '3 vs 3' },
-            ].map((f) => (
-              <button
-                key={f.size}
-                aria-pressed={filter === f.size}
-                className={filter === f.size ? 'active' : ''}
-                onClick={() => setFilter(f.size)}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
-          <div className="rooms-list">
-            {tables.length ? (
-              tables.map((table) => (
-                <div className="room-row" key={table.code}>
-                  <div className="mini-table" aria-hidden="true">
-                    <span />
-                    <span />
-                    <span />
-                    <span />
+        <div className="lobby-main">
+          <section className="table-browser" aria-labelledby="tables-heading">
+            <div className="panel-header">
+              <h2 id="tables-heading">
+                Mesas públicas <span className="count-badge">{p.tables.length}</span>
+              </h2>
+              <span className="small-muted">Sin flor</span>
+            </div>
+            <div className="table-filters" aria-label="Filtrar mesas por jugadores">
+              {[
+                { size: 0, label: 'Todas' },
+                { size: 2, label: '1 vs 1' },
+                { size: 4, label: '2 vs 2' },
+                { size: 6, label: '3 vs 3' },
+              ].map((f) => (
+                <button
+                  key={f.size}
+                  aria-pressed={filter === f.size}
+                  className={filter === f.size ? 'active' : ''}
+                  onClick={() => setFilter(f.size)}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+            <div className="rooms-list">
+              {tables.length ? (
+                tables.map((table) => (
+                  <div className="room-row" key={table.code}>
+                    <div className="mini-table" aria-hidden="true">
+                      <span />
+                      <span />
+                      <span />
+                      <span />
+                    </div>
+                    <div className="room-info">
+                      <strong>Mesa de {table.host}</strong>
+                      <span>
+                        {table.size / 2} vs {table.size / 2} · {table.target} puntos
+                      </span>
+                    </div>
+                    <div className="room-occupancy">
+                      <Users size={15} />
+                      <span>
+                        {table.count}/{table.size}
+                      </span>
+                    </div>
+                    <button
+                      className="primary"
+                      disabled={p.busy}
+                      onClick={() =>
+                        withName(() => p.command({ action: 'join', name: p.name, code: table.code }))
+                      }
+                    >
+                      Sentarme <ArrowRight size={16} />
+                    </button>
                   </div>
-                  <div className="room-info">
-                    <strong>Mesa de {table.host}</strong>
-                    <span>
-                      {table.size / 2} vs {table.size / 2} · {table.target} puntos
-                    </span>
+                ))
+              ) : (
+                <div className="rooms-empty">
+                  <div className="empty-seats" aria-hidden="true">
+                    <div />
+                    <div />
+                    <div />
+                    <div />
                   </div>
-                  <div className="room-occupancy">
-                    <Users size={15} />
-                    <span>
-                      {table.count}/{table.size}
-                    </span>
-                  </div>
-                  <button
-                    className="primary"
-                    disabled={p.busy}
-                    onClick={() =>
-                      withName(() => p.command({ action: 'join', name: p.name, code: table.code }))
-                    }
-                  >
-                    Sentarme <ArrowRight size={16} />
-                  </button>
+                  <h3>{p.connected ? 'No hay mesas abiertas' : 'No se pudo conectar al servidor'}</h3>
+                  <p>
+                    {p.connected
+                      ? 'Creá una mesa pública para que se sume gente.'
+                      : 'Podés jugar contra bots mientras tanto.'}
+                  </p>
                 </div>
-              ))
-            ) : (
-              <div className="rooms-empty">
-                <div className="empty-seats" aria-hidden="true">
-                  <div />
-                  <div />
-                  <div />
-                  <div />
-                </div>
-                <h3>{p.connected ? 'No hay mesas abiertas' : 'No se pudo conectar al servidor'}</h3>
-                <p>
-                  {p.connected
-                    ? 'Creá una mesa pública para que se sume gente.'
-                    : 'Podés jugar contra bots mientras tanto.'}
-                </p>
-              </div>
-            )}
-          </div>
-          <div className="browser-footer">
-            <span>
-              <Users size={14} /> {p.tables.reduce((total, t) => total + t.count, 0)} jugadores en
-              mesas abiertas
-            </span>
-            <span>Actualización en vivo</span>
-          </div>
-        </section>
+              )}
+            </div>
+            <div className="browser-footer">
+              <span>
+                <Users size={14} /> {p.tables.reduce((total, t) => total + t.count, 0)} jugadores en
+                mesas abiertas
+              </span>
+              <span>Actualización en vivo</span>
+            </div>
+          </section>
+          <section className="practice-panel">
+            <div className="practice-cards" aria-hidden="true">
+              <img src="/cards/espadas-1.webp" alt="" />
+              <img src="/cards/bastos-1.webp" alt="" />
+              <img src="/cards/oros-7.webp" alt="" />
+            </div>
+            <div className="practice-info">
+              <h2>Jugar contra bots</h2>
+              <p>
+                Práctica de {p.size / 2} vs {p.size / 2}, a {p.target} puntos.
+              </p>
+            </div>
+            <button className="outline" onClick={p.practice}>
+              <RotateCcw size={15} />
+              Jugar ahora
+            </button>
+          </section>
+        </div>
         <aside className="create-panel">
           <div className="panel-header">
             <h2>Crear mesa</h2>
@@ -254,23 +273,6 @@ export function Lobby(p: Props) {
             </p>
           </form>
         </aside>
-        <section className="practice-panel">
-          <div className="practice-cards" aria-hidden="true">
-            <img src="/cards/espadas-1.webp" alt="" />
-            <img src="/cards/bastos-1.webp" alt="" />
-            <img src="/cards/oros-7.webp" alt="" />
-          </div>
-          <div className="practice-info">
-            <h2>Jugar contra bots</h2>
-            <p>
-              Práctica de {p.size / 2} vs {p.size / 2}, a {p.target} puntos.
-            </p>
-          </div>
-          <button className="outline" onClick={p.practice}>
-            <RotateCcw size={15} />
-            Jugar ahora
-          </button>
-        </section>
       </div>
     </main>
   );
