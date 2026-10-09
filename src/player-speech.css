@@ -1,0 +1,87 @@
+/* Additive layer: keep the existing table, avatars and card layout. */
+.seat.seat-speaking { z-index: 12; }
+.player-speech {
+  --speech-bg: #fff8e7;
+  position: absolute;
+  bottom: calc(100% + 12px);
+  left: 50%;
+  translate: -50% 0;
+  width: max-content;
+  max-width: 132px;
+  padding: 9px 13px;
+  border: 1px solid #dfc888;
+  border-radius: 14px;
+  background: var(--speech-bg);
+  color: #233b4f;
+  box-shadow: 0 5px 18px #0003;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.2;
+  text-align: center;
+  text-transform: uppercase;
+  pointer-events: none;
+  transform-origin: bottom center;
+  animation: speech-pop 180ms ease-out;
+}
+.player-speech::after {
+  content: '';
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  left: calc(50% - 5px);
+  bottom: -6px;
+  rotate: 45deg;
+  background: var(--speech-bg);
+  border-right: 1px solid #dfc888;
+  border-bottom: 1px solid #dfc888;
+}
+.speech-accept { --speech-bg: #e4f5e7; color: #205537; }
+.speech-reject { --speech-bg: #ffebe3; color: #853c2e; }
+/* Top seats speak sideways so their bubbles stay inside the table. */
+.seats-2 .seat-1 .player-speech,
+.seats-4 .seat-2 .player-speech,
+.seats-6 .seat-3 .player-speech {
+  bottom: auto; top: 0; left: calc(100% + 12px); translate: 0 0;
+  transform-origin: left center;
+}
+.seats-2 .seat-1 .player-speech::after,
+.seats-4 .seat-2 .player-speech::after,
+.seats-6 .seat-3 .player-speech::after {
+  left: -6px; bottom: auto; top: 12px; rotate: 135deg;
+}
+/* Side seats point inward, away from the viewport edges. */
+.seats-4 .seat-1 .player-speech,
+.seats-6 .seat-1 .player-speech,
+.seats-6 .seat-2 .player-speech { left: auto; right: 0; translate: 0 0; }
+.seats-4 .seat-1 .player-speech::after,
+.seats-6 .seat-1 .player-speech::after,
+.seats-6 .seat-2 .player-speech::after { left: auto; right: 12px; }
+.seats-4 .seat-3 .player-speech,
+.seats-6 .seat-4 .player-speech,
+.seats-6 .seat-5 .player-speech { left: 0; translate: 0 0; }
+.seats-4 .seat-3 .player-speech::after,
+.seats-6 .seat-4 .player-speech::after,
+.seats-6 .seat-5 .player-speech::after { left: 12px; }
+/* Upper diagonal seats have little space above their avatars. */
+.seats-6 .seat-2 .player-speech {
+  bottom: auto; top: 0; right: calc(100% + 12px); transform-origin: right center;
+}
+.seats-6 .seat-2 .player-speech::after {
+  right: -6px; bottom: auto; top: 12px; rotate: -45deg;
+}
+.seats-6 .seat-4 .player-speech {
+  bottom: auto; top: 0; left: calc(100% + 12px); transform-origin: left center;
+}
+.seats-6 .seat-4 .player-speech::after {
+  left: -6px; bottom: auto; top: 12px; rotate: 135deg;
+}
+@keyframes speech-pop {
+  from { opacity: 0; transform: scale(.8); }
+  to { opacity: 1; transform: scale(1); }
+}
+@media (max-width: 600px) {
+  .player-speech { max-width: 100px; padding: 7px 10px; font-size: 11px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .player-speech { animation: none; }
+}

@@ -14,7 +14,16 @@ export type Bid = {
   envidos: number;
 };
 export type Play = { seat: number; card: Card };
+export type Speech = {
+  id: number;
+  seat: number;
+  round: number;
+  text: string;
+  kind: 'call' | 'accept' | 'reject';
+};
 export type Game = {
+  // Optional for rooms saved before avatar speech was introduced.
+  speech?: Speech[];
   players: Player[];
   hands: Card[][];
   original: Card[][];
@@ -137,6 +146,11 @@ export function deal(g: Game, random: Random = secureRandom, rotate = true) {
 function addLog(g: Game, message: string) {
   g.log = [...g.log.slice(-29), message];
 }
+function say(g: Game, seat: number, text: string, kind: Speech['kind']) {
+  const history = g.speech ?? [];
+  const id = (history.at(-1)?.id ?? 0) + 1;
+  g.speech = [...history.slice(-29), { id, seat, round: g.round, text, kind }];
+}
 function score(g: Game, team: number, points: number) {
   g.scores[team] += points;
   if (g.scores[team] >= g.target) {
@@ -249,6 +263,7 @@ export function callBid(g: Game, seat: number, name: BidName) {
     g.bid = { name, team, points, refused: old?.points ?? g.stake, kind, envidos: 0 };
   }
   g.message = `${g.players[seat].name}: ¡${name}!`;
+  say(g, seat, `¡${name}!`, 'call');
   addLog(g, g.message);
 }
 export function answerBid(g: Game, seat: number, accept: boolean) {
@@ -256,6 +271,7 @@ export function answerBid(g: Game, seat: number, accept: boolean) {
   if (g.status !== 'playing' || !bid || bid.team === g.players[seat].team)
     throw Error('No hay un canto para responder.');
   g.bid = null;
+  say(g, seat, accept ? '¡Quiero!' : 'No quiero', accept ? 'accept' : 'reject');
   addLog(g, `${g.players[seat].name}: ${accept ? '¡Quiero!' : 'No quiero.'}`);
   if (bid.kind === 'truco') {
     g.envidoDone = true;

@@ -31,6 +31,7 @@ import {
 } from '../shared/game.ts';
 import { relativeSeat, playedPosition, pileDirection, orderedSeatCards } from './table-layout.ts';
 import { gameNotice } from './game-notice.ts';
+import { usePlayerSpeech } from './use-player-speech.ts';
 import type { GameNotice } from './game-notice.ts';
 import type { Game, View, Player, Card, BidName } from '../shared/game.ts';
 import './style.css';
@@ -38,6 +39,7 @@ import './light.css';
 import './table-cards.css';
 import './table-sidebar.css';
 import './brand.css';
+import './player-speech.css';
 import { playCardSound, playCallSound, unlockSounds } from './sounds.ts';
 import { Lobby } from './Lobby.tsx';
 import { readLocalAvatar, saveLocalAvatar } from './local-avatar.ts';
@@ -115,6 +117,7 @@ function App() {
     musicRef = useRef<HTMLAudioElement>(null),
     chatMessagesRef = useRef<HTMLDivElement>(null);
   const g = room?.game ?? local;
+  const speeches = usePlayerSpeech(g, room?.code ?? 'practice');
   const inTable = Boolean(room || local);
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -514,14 +517,27 @@ function App() {
                     </div>
                     {g.players.map((p, i) => {
                       const relative = relativeSeat(i, g.seat, g.players.length);
+                      const speech = speeches.find((event) => event.seat === i);
                       return (
                         <div
                           key={p.id}
-                          className={`seat seat-${relative} ${g.turn === i && g.status === 'playing' ? 'seat-turn' : ''} ${relative === 0 ? 'self-seat' : ''}`}
+                          className={`seat seat-${relative} ${speech ? 'seat-speaking' : ''} ${g.status === 'playing' && (g.bid ? p.team !== g.bid.team : g.turn === i) ? 'seat-turn' : ''} ${relative === 0 ? 'self-seat' : ''}`}
                         >
                           <div className={`avatar team-${p.team}`}>
+                            {speech && (
+                              <span
+                                key={speech.id}
+                                className={`player-speech speech-${speech.kind}`}
+                                role="status"
+                                aria-live="polite"
+                                aria-atomic="true"
+                                aria-label={`${p.name} dice: ${speech.text}`}
+                              >
+                                {speech.text}
+                              </span>
+                            )}
                             {i === g.seat && avatar ? <img className="avatar-photo" src={avatar} alt="" /> : p.name.slice(0, 1).toUpperCase()}
-                            {g.mano === i && <span className="mano-mark">M</span>}
+                            {g.mano === i && <span className="mano-mark" title="Mano: juega primero" aria-label="Es mano">M</span>}
                           </div>
                           <span className="seat-name">
                             {i === g.seat ? `${p.name} (vos)` : p.name}
@@ -579,7 +595,7 @@ function App() {
                               '--tilt': `${(i - (g.hand.length - 1) / 2) * 6}deg`,
                             } as React.CSSProperties
                           }
-                          disabled={!canPlay}
+                          disabled={!canPlay || busy}
                           aria-label={`Tirar ${card.value} de ${card.suit}`}
                           onClick={() => {
                             command({ action: 'play', card: card.id });
@@ -642,12 +658,14 @@ function App() {
                         <span className="answer-label">¿Qué decís?</span>
                         <button
                           className="primary"
+                          disabled={busy}
                           onClick={() => command({ action: 'answer', accept: true })}
                         >
                           ¡Quiero!
                         </button>
                         <button
                           className="outline"
+                          disabled={busy}
                           onClick={() => command({ action: 'answer', accept: false })}
                         >
                           No quiero
@@ -655,6 +673,7 @@ function App() {
                         {g.bid?.kind === 'truco' && g.bid.points < 4 && (
                           <button
                             className="call"
+                            disabled={busy}
                             onClick={() => command({ action: 'bid', name: nextBid })}
                           >
                             {nextBid}
@@ -666,6 +685,7 @@ function App() {
                           g.hand.length === 3 && (
                             <button
                               className="call"
+                              disabled={busy}
                               onClick={() => command({ action: 'bid', name: 'envido' })}
                             >
                               Envido primero
@@ -676,6 +696,7 @@ function App() {
                             {g.bid.name === 'envido' && g.bid.envidos < 2 && (
                               <button
                                 className="call"
+                                disabled={busy}
                                 onClick={() => command({ action: 'bid', name: 'envido' })}
                               >
                                 Envido
@@ -684,6 +705,7 @@ function App() {
                             {g.bid.name === 'envido' && (
                               <button
                                 className="call"
+                                disabled={busy}
                                 onClick={() => command({ action: 'bid', name: 'real envido' })}
                               >
                                 Real envido
@@ -691,6 +713,7 @@ function App() {
                             )}
                             <button
                               className="call"
+                              disabled={busy}
                               onClick={() => command({ action: 'bid', name: 'falta envido' })}
                             >
                               Falta envido
@@ -712,6 +735,7 @@ function App() {
                                     <button
                                       key={b}
                                       className="call"
+                                      disabled={busy}
                                       onClick={() => command({ action: 'bid', name: b })}
                                     >
                                       {b}
@@ -727,6 +751,7 @@ function App() {
                           (g.raiseTeam === null || g.raiseTeam === ownTeam) && (
                             <button
                               className="primary truco-call"
+                              disabled={busy}
                               onClick={() => command({ action: 'bid', name: nextBid })}
                             >
                               ¡{nextBid}!
@@ -734,7 +759,7 @@ function App() {
                           )}
                         <button
                           className="fold"
-                          disabled={Boolean(g.bid)}
+                          disabled={Boolean(g.bid) || busy}
                           onClick={() => command({ action: 'fold' })}
                         >
                           <Flag size={15} />
