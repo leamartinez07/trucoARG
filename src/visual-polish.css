@@ -419,3 +419,67 @@ dialog button, .playing-table .game-actions button { border-radius: 3px; }
   .back-link, .table-status { font-size: 14px; }
   .seat-name, .playing-table .self-seat .seat-name { font-size: 12px; }
 }
+
+/* Original lettering, outlined once with a modest weight and muted gold edge. */
+.wordmark-logo { display: block; width: 224px; height: auto; }
+.lobby > .lobby-heading { border: 0; box-shadow: none; border-radius: 0; background: transparent; }
+@media (max-width: 1050px) { .wordmark-logo { width: 200px; } }
+@media (max-width: 760px) { .wordmark-logo { width: clamp(154px, 42vw, 205px); } }
+@media (hover: hover) {
+  .site-header nav button:not(:disabled):hover,
+  .header-tools button:not(:disabled):hover,
+  .back-link:hover, .dialog-close:not(:disabled):hover,
+  .table-filters button:not(.active):not(:disabled):hover,
+  .segmented button:not(.active):not(:disabled):hover,
+  .outline:not(:disabled):hover, .invite:not(:disabled):hover, .call:not(:disabled):hover,
+  .playing-table .game-actions .call:not(:disabled):hover,
+  .playing-table .game-actions .fold:not(:disabled):hover {
+    color: #244d6c; background: #f5edce; border-color: #bdaa76; box-shadow: inset 0 -2px 0 #d3bc7a;
+  }
+  .site-header nav button:not(:disabled):hover::after { background: #baa064; }
+  .primary:not(:disabled):hover, .chat-panel form button:not(:disabled):hover,
+  .table-filters .active:not(:disabled):hover, .segmented .active:not(:disabled):hover,
+  .playing-table .game-actions .primary:not(:disabled):hover {
+    background: #efe0b2; color: #244d6c; border-color: #bdaa76; box-shadow: inset 0 -2px 0 #d3bc7a;
+  }
+}
+@media (min-width: 761px) {
+  .playing-table.seats-2, .playing-table.seats-4, .playing-table.seats-6 { min-height: 780px; }
+  .playing-table .my-hand button { width: clamp(96px, 12.8cqh, 114px); }
+  .playing-table .played-pile, .playing-table.seats-6 .played-pile { --played-width: clamp(80px, 10.5cqh, 94px); --pile-step-y: 16px; }
+  .pile-up .played-card, .pile-up-left .played-card, .pile-up-right .played-card { transform: translate(-50%, -60%); }
+}
+@media (max-width: 760px) {
+  .playing-table .my-hand button { width: clamp(56px, 16vw, 68px); }
+  .playing-table.seats-2 .played-pile, .playing-table.seats-4 .played-pile { --played-width: clamp(48px, 14vw, 56px); }
+  .playing-table.seats-6 .played-pile { --played-width: clamp(42px, 12vw, 48px); }
+}
+
+/* Put turn and envido points in view before the board, without a redundant status row. */
+.app-game .site-header { height: 60px; min-height: 60px; }
+.game-page { padding-top: 8px; }
+.game-top { margin-bottom: 6px; }
+.table-wrap > .table-status { margin: 0 0 8px; padding: 8px 12px; min-height: 38px; }
+.score-sidebar { padding-top: 0; }
+@media (min-width: 761px) {
+  .playing-table.seats-2, .playing-table.seats-4, .playing-table.seats-6 {
+    min-height: 580px; height: clamp(580px, calc(100dvh - 170px), 900px);
+  }
+  .playing-table .my-hand { bottom: clamp(96px, 17cqh, 132px); }
+  .playing-table .my-hand button { width: clamp(78px, 12.8cqh, 114px); }
+  .playing-table .played-pile, .playing-table.seats-6 .played-pile { --played-width: clamp(60px, 10.5cqh, 94px); --pile-step-y: 12px; }
+  .playing-table .played-pile[data-relative-seat='0'] { top: 51% !important; }
+}
+@media (max-width: 760px) {
+  .app-game .site-header { height: 92px; min-height: 92px; grid-template-rows: 48px 40px; }
+  .app-game .site-header nav { height: 40px; }
+  .game-top { gap: 4px; }
+  .game-top .back-link { min-height: 32px; }
+  .table-meta { flex-direction: row; align-items: center; }
+  .table-wrap > .table-status { display: flex; flex-wrap: wrap; gap: 4px 8px; }
+  .table-wrap > .table-status .envido-count { margin: 0 0 0 auto; padding: 0; border: 0; }
+}
+@media (min-width: 761px) {
+  .playing-table .self-seat { left: calc(50% - 280px); width: 100px; min-width: 100px; }
+  .playing-table .self-seat .seat-name { max-width: 100px; }
+}

@@ -363,7 +363,7 @@ function App() {
           }}
           aria-label="Faltaenvidoytruco, inicio"
         >
-          <strong>Falta envido y truco</strong>
+          <img className="wordmark-logo" src="/wordmark.svg" alt="" aria-hidden="true" />
           <span className="wordmark-flower" aria-hidden="true" />
         </button>
         <nav>
@@ -479,6 +479,7 @@ function App() {
                 </button>
               )}
               {local && <span className="practice-badge">CON BOTS</span>}
+              {!local && !connected && <span role="status">Reconectando…</span>}
             </div>
           </div>
           <div className={`game-layout ${g?.players.length === 6 ? 'game-layout-wide' : ''}`}>
@@ -488,17 +489,26 @@ function App() {
                 <span className="mobile-score-divider" aria-hidden="true" />
                 <span>{(g?.players.length ?? room?.size ?? size) === 2 ? 'Rival' : 'Ellos'} <strong>{currentScore[1 - ownTeam]}</strong></span>
               </div>
-              <div className="table-top">
+              <div className="table-status">
+                <span className="status-pulse" />
                 <span>
-                  <i />
-                  {local ? 'PRÁCTICA LOCAL' : connected ? 'MESA CONECTADA' : 'RECONECTANDO…'}
+                  {g
+                    ? g.players.some((p) => !p.connected)
+                      ? 'Esperamos a que vuelva quien se desconectó.'
+                      : g.bid
+                        ? `${g.players.find((p) => p.team === g.bid!.team)?.name} cantó ${g.bid.name}.`
+                        : g.status === 'playing'
+                          ? g.turn === g.seat
+                            ? 'Te toca. Elegí una carta y jugala.'
+                            : `Juega ${g.players[g.turn].name}.`
+                          : g.message
+                    : `${room!.players.length} de ${room!.size} jugadores en la mesa.`}
                 </span>
-                <span>
-                  {g && (
-                    <span className="compact-self-name">{g.players[g.seat].name} (vos) · </span>
-                  )}
-                  {g ? `MANO ${String(g.round).padStart(2, '0')}` : 'ESPERANDO A LA BANDA'}
-                </span>
+                {g && (
+                  <span className="envido-count">
+                    Tus tantos: <strong>{g.envidoPoints}</strong>
+                  </span>
+                )}
               </div>
               <div className={`playing-table seats-${g?.players.length ?? room?.size ?? size}`}>
                 {notice && (
@@ -771,27 +781,7 @@ function App() {
                   </div>
                 )}
               </div>
-              <div className="table-status">
-                <span className="status-pulse" />
-                <span>
-                  {g
-                    ? g.players.some((p) => !p.connected)
-                      ? 'Esperamos a que vuelva quien se desconectó.'
-                      : g.bid
-                        ? `${g.players.find((p) => p.team === g.bid!.team)?.name} cantó ${g.bid.name}.`
-                        : g.status === 'playing'
-                          ? g.turn === g.seat
-                            ? 'Te toca. Elegí una carta y jugala.'
-                            : `Juega ${g.players[g.turn].name}.`
-                          : g.message
-                    : `${room!.players.length} de ${room!.size} jugadores en la mesa.`}
-                </span>
-                {g && (
-                  <span className="envido-count">
-                    Tus tantos: <strong>{g.envidoPoints}</strong>
-                  </span>
-                )}
-              </div>
+
             </section>
             <aside className="score-sidebar">
               <div className="scoreboard">
