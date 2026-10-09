@@ -40,6 +40,7 @@ import './table-cards.css';
 import './table-sidebar.css';
 import './brand.css';
 import './player-speech.css';
+import './visual-polish.css';
 import { playCardSound, playCallSound, unlockSounds } from './sounds.ts';
 import { Lobby } from './Lobby.tsx';
 import { readLocalAvatar, saveLocalAvatar } from './local-avatar.ts';
@@ -362,7 +363,7 @@ function App() {
           }}
           aria-label="Faltaenvidoytruco, inicio"
         >
-          <strong>Faltaenvidoytruco</strong>
+          <strong>Falta envido y truco</strong>
           <span className="wordmark-flower" aria-hidden="true" />
         </button>
         <nav>

@@ -17,6 +17,6 @@
     }
   ],
   "rewrites": [
-    { "source": "/((?!api/|assets/|cards/|audio/|favicon.svg|filete-corner.png).*)", "destination": "/index.html" }
+    { "source": "/((?!api/|assets/|cards/|audio/|fonts/|favicon.svg|filete-corner.png).*)", "destination": "/index.html" }
   ]
 }
