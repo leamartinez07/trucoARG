@@ -41,6 +41,7 @@ import './table-sidebar.css';
 import './brand.css';
 import './player-speech.css';
 import './visual-polish.css';
+import './table-spacing.css';
 import { playCardSound, playCallSound, unlockSounds } from './sounds.ts';
 import { Lobby } from './Lobby.tsx';
 import { readLocalAvatar, saveLocalAvatar } from './local-avatar.ts';
@@ -571,17 +572,18 @@ function App() {
                       return (
                         <div
                           key={player.id}
-                          className={`played-pile pile-${pileDirection(relative, g.players.length)}`}
+                          className={`played-pile balanced-pile pile-${pileDirection(relative, g.players.length)}`}
                           data-seat={seat}
                           data-relative-seat={relative}
-                          style={playedPosition(relative, g.players.length)}
+                          style={{ ...playedPosition(relative, g.players.length), '--pile-count': cards.length } as React.CSSProperties}
                           role="group"
                           aria-label={`${player.name}, cartas jugadas`}
                         >
                           <div className="played-pile-cards">
-                            {cards.map((play) => (
+                            {cards.map((play, cardIndex) => (
                               <div
                                 className="played-card"
+                                style={{ '--card-index': cardIndex } as React.CSSProperties}
                                 key={play.card.id}
                                 data-trick={play.trick + 1}
                                 tabIndex={0}

@@ -483,3 +483,20 @@ dialog button, .playing-table .game-actions button { border-radius: 3px; }
   .playing-table .self-seat { left: calc(50% - 280px); width: 100px; min-width: 100px; }
   .playing-table .self-seat .seat-name { max-width: 100px; }
 }
+
+/* Keep the hero aligned with the panels, and strengthen only its title. */
+.lobby > .lobby-heading { padding: 24px 140px 30px; min-height: 204px; margin-bottom: 36px; }
+.lobby > .lobby-heading::before { left: 0; top: 20px; }
+.lobby > .lobby-heading::after { right: 0; top: 20px; }
+.lobby > .lobby-heading h1 { -webkit-text-stroke: .55px currentColor; }
+.lobby > .lobby-heading .connection-state { right: 0; height: 36px; }
+/* Navigation uses a single underline; the selected tab stays unchanged. */
+.site-header nav button:not(:disabled):hover,
+.site-header nav button:focus-visible { background: transparent; box-shadow: none; border-color: transparent; color: #234e70; }
+.site-header nav button::after { height: 3px; border-radius: 3px 3px 0 0; }
+.site-header nav button:not(.nav-active):hover::after { background: #c9b578; }
+.site-header nav button.nav-active:hover::after { background: #a8772f; }
+@media (max-width: 760px) {
+  .lobby > .lobby-heading { padding: 24px 12px; min-height: 170px; }
+  .lobby > .lobby-heading h1 { -webkit-text-stroke: .4px currentColor; }
+}

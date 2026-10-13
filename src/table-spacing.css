@@ -1,0 +1,53 @@
+/* One centered fan per player. Side fans rotate as a whole, including their
+   offsets, so adding a card cannot move the pile toward another player's. */
+.playing-table .played-pile.balanced-pile[data-relative-seat] {
+  left: var(--mobile-x, var(--pile-x)) !important;
+  top: var(--mobile-y, var(--pile-y)) !important;
+  --played-width: clamp(76px, 12cqh, 108px);
+  --fan-step: 20px;
+}
+.playing-table .balanced-pile .played-pile-cards { transform: rotate(var(--pile-angle, 0deg)); }
+.playing-table .balanced-pile .played-card:nth-child(n) {
+  left: calc((var(--card-index) - (var(--pile-count) - 1) / 2) * var(--fan-step));
+  top: 0;
+  transform: translate(-50%, -50%);
+}
+.playing-table .balanced-pile:is(.pile-right, .pile-down-right) { --pile-angle: -90deg; }
+.playing-table .balanced-pile:is(.pile-left, .pile-down-left) { --pile-angle: 90deg; }
+.playing-table.seats-4 :is(.seat-1, .seat-3) .backs,
+.playing-table.seats-6 :is(.seat-1, .seat-5) .backs { transform: rotate(90deg); margin-block: 12px; }
+.playing-table .my-hand button { width: clamp(92px, 14cqh, 122px); }
+@media (max-width: 760px) {
+  .playing-table.seats-2, .playing-table.seats-4, .playing-table.seats-6 {
+    min-height: 660px; height: max(660px, calc(100dvh - 200px));
+  }
+  .playing-table .played-pile.balanced-pile[data-relative-seat] {
+    --played-width: clamp(50px, 15cqw, 66px);
+    --fan-step: 10px;
+  }
+  .playing-table.seats-6 .balanced-pile[data-relative-seat] {
+    --played-width: clamp(46px, 14cqw, 60px);
+    --fan-step: 8px;
+  }
+  .playing-table.seats-6 .balanced-pile.pile-up-left { --mobile-x: 20%; }
+  .playing-table.seats-6 .balanced-pile.pile-up-right { --mobile-x: 80%; }
+  .playing-table.seats-6 .balanced-pile.pile-down-left { --mobile-x: 17%; --mobile-y: 45%; }
+  .playing-table.seats-6 .balanced-pile.pile-down-right { --mobile-x: 83%; --mobile-y: 45%; }
+  .playing-table .balanced-pile.pile-down { --mobile-y: 54%; }
+  .playing-table.seats-4 .balanced-pile.pile-left { --mobile-x: 19%; }
+  .playing-table.seats-4 .balanced-pile.pile-right { --mobile-x: 81%; }
+  .playing-table .my-hand button { width: clamp(62px, 18cqw, 76px); }
+  .playing-table.seats-2 .my-hand, .playing-table.seats-4 .my-hand,
+  .playing-table.seats-6 .my-hand { bottom: 112px; }
+  .playing-table .self-seat { bottom: 136px; }
+  /* Six seats need a lower avatar lane on narrow screens: keep the side
+     players' hidden hands clear of their played cards. */
+  .playing-table.seats-6 .seat-1, .playing-table.seats-6 .seat-5 {
+    top: auto; bottom: 210px;
+  }
+}
+
+@media (min-width: 761px) {
+  .playing-table.seats-2, .playing-table.seats-4, .playing-table.seats-6 { min-height: 660px; }
+  .playing-table .my-hand { bottom: clamp(90px, 15cqh, 120px); }
+}

@@ -5,27 +5,12 @@ import type { Game, Play } from '../shared/game.ts';
 export const relativeSeat = (seat: number, viewer: number, count: number) =>
   (seat - viewer + count) % count;
 
-// The first card starts on the inner end of each arm. The next two move toward
-// the seat that played them. Six-player tables use diagonal arms at the corners.
+// Anchors center the complete pile, independent of how many tricks were played.
+// Side seats face across the table; the far row faces the viewer.
 const piles: Record<number, readonly (readonly [number, number])[]> = {
-  2: [
-    [50, 56],
-    [50, 30],
-  ],
-  4: [
-    [50, 56],
-    [68, 49],
-    [50, 30],
-    [32, 49],
-  ],
-  6: [
-    [50, 56],
-    [74, 70],
-    [74, 30],
-    [50, 30],
-    [26, 30],
-    [26, 70],
-  ],
+  2: [[50, 52.5], [50, 31.5]],
+  4: [[50, 52.5], [76, 43], [50, 31.5], [24, 43]],
+  6: [[50, 52.5], [79, 53], [76, 31.5], [50, 31.5], [24, 31.5], [21, 53]],
 };
 const directions: Record<number, readonly string[]> = {
   2: ['down', 'up'],
@@ -34,7 +19,7 @@ const directions: Record<number, readonly string[]> = {
 };
 export function playedPosition(relative: number, count: number) {
   const [left, top] = piles[count][relative];
-  return { left: `${left}%`, top: `${top}%` };
+  return { left: `${left}%`, top: `${top}%`, '--pile-x': `${left}%`, '--pile-y': `${top}%` };
 }
 export function pileDirection(relative: number, count: number) {
   return directions[count][relative];
