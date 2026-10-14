@@ -509,7 +509,7 @@ dialog button, .playing-table .game-actions button { border-radius: 3px; }
 .site-header nav button { justify-content: center; }
 .header-tools { align-items: center; }
 .lobby > .lobby-heading::before, .lobby > .lobby-heading::after {
-  width: clamp(164px, 17vw, 216px); height: auto; aspect-ratio: 1195 / 1142;
+  width: clamp(148px, 15.5vw, 196px); height: auto; aspect-ratio: 1195 / 1142;
   /* Trim the asset's transparent margins so its painted edges align with the panels. */
   background-size: 106.9456% 107.7058%; background-position: 57.8313% 48.8636%;
 }
