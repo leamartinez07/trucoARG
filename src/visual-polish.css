@@ -509,7 +509,7 @@ dialog button, .playing-table .game-actions button { border-radius: 3px; }
 .site-header nav button { justify-content: center; }
 .header-tools { align-items: center; }
 .lobby > .lobby-heading::before, .lobby > .lobby-heading::after {
-  width: clamp(148px, 15vw, 184px); height: clamp(148px, 15vw, 184px); top: 8px;
+  width: clamp(164px, 17vw, 216px); height: clamp(164px, 17vw, 216px); top: 18px;
 }
 .lobby > .lobby-heading { padding-inline: 190px; min-height: 220px; }
 .table-wrap > .table-status { margin: 10px 0 0; }
@@ -527,8 +527,8 @@ dialog button, .playing-table .game-actions button { border-radius: 3px; }
   .footer-bottom { flex-direction: column; gap: 6px; }
 }
 
-/* Center each ornament on the title block, inside the same panel edges. */
-.lobby > .lobby-heading::before { top: 50%; transform: translateY(-50%); }
-.lobby > .lobby-heading::after { top: 50%; transform: translateY(-50%) scaleX(-1); }
+/* Extend the ornaments toward the panels while preserving their upper alignment. */
+.lobby > .lobby-heading::before { top: 18px; transform: none; }
+.lobby > .lobby-heading::after { top: 18px; transform: scaleX(-1); }
 .footer-logo { display: flex; align-items: center; gap: 10px; }
 .footer-logo .wordmark-flower { display: block; width: 24px; height: 24px; flex: none; }
