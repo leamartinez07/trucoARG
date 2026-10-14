@@ -515,7 +515,7 @@ dialog button, .playing-table .game-actions button { border-radius: 3px; }
 .table-wrap > .table-status { margin: 10px 0 0; }
 .site-footer { margin-top: auto; color: #c1cdd3; background: #243f50; border-top: 3px solid #9d916e; }
 .footer-inner { max-width: 1280px; margin: auto; padding: 32px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 24px; }
-.footer-brand img { width: 224px; padding: 9px 12px; box-sizing: content-box; background: #eee9dc; border-radius: 3px; opacity: .9; }
+.footer-brand img { width: 224px; height: auto; padding: 0; background: transparent; opacity: 1; }
 .footer-brand p { margin: 10px 0 0; font-size: 13px; color: #c1cdd3; }
 .site-footer nav { display: flex; flex-wrap: wrap; gap: 20px; }
 .site-footer nav button { color: #d4dde0; font-size: 13px; padding: 8px 0; border-bottom: 1px solid transparent; }
@@ -526,3 +526,9 @@ dialog button, .playing-table .game-actions button { border-radius: 3px; }
   .footer-inner { padding: 26px 20px; gap: 20px; }
   .footer-bottom { flex-direction: column; gap: 6px; }
 }
+
+/* Center each ornament on the title block, inside the same panel edges. */
+.lobby > .lobby-heading::before { top: 50%; transform: translateY(-50%); }
+.lobby > .lobby-heading::after { top: 50%; transform: translateY(-50%) scaleX(-1); }
+.footer-logo { display: flex; align-items: center; gap: 10px; }
+.footer-logo .wordmark-flower { display: block; width: 24px; height: 24px; flex: none; }

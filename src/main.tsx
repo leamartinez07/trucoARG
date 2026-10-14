@@ -926,7 +926,7 @@ function App() {
 
       <footer className="site-footer">
         <div className="footer-inner">
-          <div className="footer-brand"><img src="/wordmark.svg" alt="Falta envido y truco" /><p>Una mesa, una charla y otra mano.</p></div>
+          <div className="footer-brand"><div className="footer-logo"><img src="/wordmark-footer.svg" alt="Falta envido y truco" /><span className="wordmark-flower" aria-hidden="true" /></div><p>Una mesa, una charla y otra mano.</p></div>
           <nav aria-label="Enlaces del pie de página">
             <button onClick={() => setDialog('rules')}>Cómo se juega</button>
             <button onClick={() => setDialog('discord')}>Voz y cámara</button>

@@ -4,13 +4,13 @@
   left: var(--mobile-x, var(--pile-x)) !important;
   top: var(--mobile-y, var(--pile-y)) !important;
   --played-width: clamp(76px, 10.6cqh, 96px);
-  --fan-step: 18px;
+  --fan-step: 24px;
 }
 .playing-table .balanced-pile .played-pile-cards { transform: rotate(var(--pile-angle, 0deg)); }
 .playing-table .balanced-pile .played-card:nth-child(n) {
   left: 0;
-  top: calc(var(--card-index) * var(--fan-step) * var(--stack-direction, 1));
-  z-index: calc(3 - var(--card-index));
+  top: calc((var(--card-index) * var(--fan-step) - (var(--pile-count) - 1) * var(--stack-inset, 6px)) * var(--stack-direction, 1));
+  z-index: calc(1 + var(--card-index));
   transform: translate(-50%, -50%);
 }
 .playing-table .balanced-pile:is(.pile-right, .pile-down-right) { --pile-angle: -90deg; }
@@ -24,11 +24,11 @@
   }
   .playing-table .played-pile.balanced-pile[data-relative-seat] {
     --played-width: clamp(50px, 15cqw, 66px);
-    --fan-step: 8px;
+    --fan-step: 12px;
   }
   .playing-table.seats-6 .balanced-pile[data-relative-seat] {
     --played-width: clamp(46px, 14cqw, 60px);
-    --fan-step: 8px;
+    --fan-step: 12px;
   }
   .playing-table.seats-6 .balanced-pile.pile-up-left { --mobile-x: 20%; }
   .playing-table.seats-6 .balanced-pile.pile-up-right { --mobile-x: 80%; }
@@ -53,7 +53,7 @@
   .playing-table .my-hand { bottom: clamp(90px, 15cqh, 120px); }
 }
 
-/* First card stays on top; later tricks extend toward the player, underneath. */
+/* Later tricks sit above earlier ones, with enough offset to read prior cards. */
 .playing-table .balanced-pile:is(.pile-up, .pile-up-left, .pile-up-right) { --stack-direction: -1; }
 .playing-table .balanced-pile .played-card:hover,
 .playing-table .balanced-pile .played-card:focus-visible { z-index: 8; }
@@ -89,4 +89,14 @@
 @media (max-width: 760px) {
   .playing-table.seats-4 .balanced-pile.pile-left { --mobile-x: 19.5%; }
   .playing-table.seats-4 .balanced-pile.pile-right { --mobile-x: 80.5%; }
+}
+
+@media (min-width: 761px) {
+  .playing-table.seats-4 .balanced-pile.pile-left { --mobile-x: calc(50% - var(--arm) - 44px); }
+  .playing-table.seats-4 .balanced-pile.pile-right { --mobile-x: calc(50% + var(--arm) + 44px); }
+  .playing-table.seats-6 .balanced-pile.pile-down-left { --mobile-x: 32%; }
+  .playing-table.seats-6 .balanced-pile.pile-down-right { --mobile-x: 68%; }
+}
+@media (max-width: 760px) {
+  .playing-table .balanced-pile { --stack-inset: 4px; }
 }
