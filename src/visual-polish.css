@@ -421,10 +421,10 @@ dialog button, .playing-table .game-actions button { border-radius: 3px; }
 }
 
 /* Original lettering, outlined once with a modest weight and muted gold edge. */
-.wordmark-logo { display: block; width: 224px; height: auto; }
+.wordmark-logo { display: block; width: 200px; height: auto; }
 .lobby > .lobby-heading { border: 0; box-shadow: none; border-radius: 0; background: transparent; }
-@media (max-width: 1050px) { .wordmark-logo { width: 200px; } }
-@media (max-width: 760px) { .wordmark-logo { width: clamp(154px, 42vw, 205px); } }
+@media (max-width: 1050px) { .wordmark-logo { width: 184px; } }
+@media (max-width: 760px) { .wordmark-logo { width: clamp(140px, 38vw, 184px); } }
 @media (hover: hover) {
   .site-header nav button:not(:disabled):hover,
   .header-tools button:not(:disabled):hover,
