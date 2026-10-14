@@ -19,7 +19,7 @@ export type Speech = {
   seat: number;
   round: number;
   text: string;
-  kind: 'call' | 'accept' | 'reject';
+  kind: 'call' | 'accept' | 'reject' | 'fold';
 };
 export type Game = {
   // Optional for rooms saved before avatar speech was introduced.
@@ -309,6 +309,8 @@ export function answerBid(g: Game, seat: number, accept: boolean) {
 }
 export function fold(g: Game, seat: number) {
   if (g.status !== 'playing' || g.bid) throw Error('Respondé al canto primero.');
+  say(g, seat, 'Me voy al mazo', 'fold');
+  addLog(g, `${g.players[seat].name}: Me voy al mazo`);
   finishRound(g, 1 - g.players[seat].team);
 }
 export function view(g: Game, seat: number): View {

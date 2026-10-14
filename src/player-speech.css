@@ -1,5 +1,8 @@
 /* Additive layer: keep the existing table, avatars and card layout. */
 .seat.seat-speaking { z-index: 12; }
+/* Avatar and its speech must paint above the later sibling containing card backs. */
+.seat.seat-speaking .avatar { z-index: 2; }
+.seat.seat-speaking .backs { z-index: 1; }
 .player-speech {
   --speech-bg: #fff8e7;
   position: absolute;
@@ -36,7 +39,7 @@
   border-bottom: 1px solid #dfc888;
 }
 .speech-accept { --speech-bg: #e4f5e7; color: #205537; }
-.speech-reject { --speech-bg: #ffebe3; color: #853c2e; }
+.speech-reject, .speech-fold { --speech-bg: #ffebe3; color: #853c2e; }
 /* Top seats speak sideways so their bubbles stay inside the table. */
 .seats-2 .seat-1 .player-speech,
 .seats-4 .seat-2 .player-speech,

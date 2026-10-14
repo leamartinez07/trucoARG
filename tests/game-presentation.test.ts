@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createGame, view, callBid, answerBid } from '../shared/game.ts';
+import { createGame, view, callBid, answerBid, fold } from '../shared/game.ts';
 import { presentationFrames, ANSWER_PAUSE, RESULT_PAUSE } from '../src/game-presentation.ts';
 
 for (const bots of [false, true]) test(`respuesta antes del resultado y puntaje, bots=${bots}`, () => {
@@ -30,4 +30,22 @@ test('rechazo y fin de partida también tienen una pausa antes del resultado', (
   assert.equal(frames[0].game.status, 'playing');
   assert.match(frames[0].game.message, /No quiero/);
   assert.equal(frames[1].game.status, 'finished');
+});
+
+for (const count of [2, 4, 6]) test(`irse al mazo muestra al jugador antes de sumar puntos, ${count} jugadores`, () => {
+  const game = createGame(Array.from({length: count}, (_, i) => ({id: String(i), name: `Jugador ${i}`, team: i % 2, bot: false, connected: true})));
+  const previous = structuredClone(view(game, 0));
+  fold(game, count - 1);
+  assert.equal(game.speech?.at(-1)?.seat, count - 1);
+  assert.equal(game.speech?.at(-1)?.kind, 'fold');
+  const frames = presentationFrames(previous, structuredClone(view(game, 0)));
+  assert.equal(frames.length, 2);
+  assert.match(frames[0].game.message, /Me voy al mazo/);
+  assert.deepEqual(frames[0].game.scores, previous.scores);
+  assert.equal(frames[0].duration, ANSWER_PAUSE);
+  assert.equal(frames[1].game.status, 'round-end');
+  assert.equal(frames[1].game.scores[0], 1);
+  const events = game.speech?.length;
+  assert.throws(() => fold(game, 0));
+  assert.equal(game.speech?.length, events);
 });
