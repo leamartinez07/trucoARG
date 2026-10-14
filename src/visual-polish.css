@@ -509,7 +509,9 @@ dialog button, .playing-table .game-actions button { border-radius: 3px; }
 .site-header nav button { justify-content: center; }
 .header-tools { align-items: center; }
 .lobby > .lobby-heading::before, .lobby > .lobby-heading::after {
-  width: clamp(164px, 17vw, 216px); height: clamp(164px, 17vw, 216px); top: 18px;
+  width: clamp(164px, 17vw, 216px); height: auto; aspect-ratio: 1195 / 1142;
+  /* Trim the asset's transparent margins so its painted edges align with the panels. */
+  background-size: 106.9456% 107.7058%; background-position: 57.8313% 48.8636%;
 }
 .lobby > .lobby-heading { padding-inline: 190px; min-height: 220px; }
 .table-wrap > .table-status { margin: 10px 0 0; }
@@ -527,8 +529,8 @@ dialog button, .playing-table .game-actions button { border-radius: 3px; }
   .footer-bottom { flex-direction: column; gap: 6px; }
 }
 
-/* Extend the ornaments toward the panels while preserving their upper alignment. */
-.lobby > .lobby-heading::before { top: 18px; transform: none; }
-.lobby > .lobby-heading::after { top: 18px; transform: scaleX(-1); }
+/* End the ornaments above the centered, dedicated connection-status row. */
+.lobby > .lobby-heading::before { top: auto; bottom: 0; transform: none; }
+.lobby > .lobby-heading::after { top: auto; bottom: 0; transform: scaleX(-1); }
 .footer-logo { display: flex; align-items: center; gap: 10px; }
 .footer-logo .wordmark-flower { display: block; width: 24px; height: 24px; flex: none; }
