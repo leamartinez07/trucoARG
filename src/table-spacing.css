@@ -3,13 +3,14 @@
 .playing-table .played-pile.balanced-pile[data-relative-seat] {
   left: var(--mobile-x, var(--pile-x)) !important;
   top: var(--mobile-y, var(--pile-y)) !important;
-  --played-width: clamp(76px, 12cqh, 108px);
-  --fan-step: 20px;
+  --played-width: clamp(76px, 10.6cqh, 96px);
+  --fan-step: 18px;
 }
 .playing-table .balanced-pile .played-pile-cards { transform: rotate(var(--pile-angle, 0deg)); }
 .playing-table .balanced-pile .played-card:nth-child(n) {
-  left: calc((var(--card-index) - (var(--pile-count) - 1) / 2) * var(--fan-step));
-  top: 0;
+  left: 0;
+  top: calc(var(--card-index) * var(--fan-step) * var(--stack-direction, 1));
+  z-index: calc(3 - var(--card-index));
   transform: translate(-50%, -50%);
 }
 .playing-table .balanced-pile:is(.pile-right, .pile-down-right) { --pile-angle: -90deg; }
@@ -23,7 +24,7 @@
   }
   .playing-table .played-pile.balanced-pile[data-relative-seat] {
     --played-width: clamp(50px, 15cqw, 66px);
-    --fan-step: 10px;
+    --fan-step: 8px;
   }
   .playing-table.seats-6 .balanced-pile[data-relative-seat] {
     --played-width: clamp(46px, 14cqw, 60px);
@@ -50,4 +51,42 @@
 @media (min-width: 761px) {
   .playing-table.seats-2, .playing-table.seats-4, .playing-table.seats-6 { min-height: 660px; }
   .playing-table .my-hand { bottom: clamp(90px, 15cqh, 120px); }
+}
+
+/* First card stays on top; later tricks extend toward the player, underneath. */
+.playing-table .balanced-pile:is(.pile-up, .pile-up-left, .pile-up-right) { --stack-direction: -1; }
+.playing-table .balanced-pile .played-card:hover,
+.playing-table .balanced-pile .played-card:focus-visible { z-index: 8; }
+@media (min-width: 761px) {
+  .playing-table.seats-2, .playing-table.seats-4, .playing-table.seats-6 { min-height: 780px; }
+  .playing-table .my-hand { bottom: 90px; }
+  .playing-table.seats-2 .seat-1, .playing-table.seats-4 .seat-2,
+  .playing-table.seats-6 .seat-2, .playing-table.seats-6 .seat-3, .playing-table.seats-6 .seat-4 { top: 24px; }
+  .playing-table.seats-2 .seat-1 .backs, .playing-table.seats-4 .seat-2 .backs,
+  .playing-table.seats-6 :is(.seat-2, .seat-3, .seat-4) .backs { position: absolute; left: calc(100% + 8px); top: 10px; }
+  .playing-table.seats-2 .balanced-pile, .playing-table.seats-4 .balanced-pile {
+    --center-y: 39cqh; --arm: calc(44px + var(--played-width) * .76945);
+  }
+  .playing-table.seats-2 .balanced-pile.pile-up, .playing-table.seats-4 .balanced-pile.pile-up {
+    --mobile-x: 50%; --mobile-y: calc(var(--center-y) - var(--arm));
+  }
+  .playing-table.seats-2 .balanced-pile.pile-down, .playing-table.seats-4 .balanced-pile.pile-down {
+    --mobile-x: 50%; --mobile-y: calc(var(--center-y) + var(--arm));
+  }
+  .playing-table.seats-4 .balanced-pile.pile-left { --mobile-x: calc(50% - var(--arm)); --mobile-y: var(--center-y); }
+  .playing-table.seats-4 .balanced-pile.pile-right { --mobile-x: calc(50% + var(--arm)); --mobile-y: var(--center-y); }
+}
+@media (max-width: 760px) {
+  .playing-table.seats-6 .balanced-pile.pile-down-left { --mobile-x: 20%; }
+  .playing-table.seats-6 .balanced-pile.pile-down-right { --mobile-x: 80%; }
+}
+@media (min-width: 761px) {
+  .playing-table.seats-6 .balanced-pile.pile-up-left { --mobile-x: 30%; }
+  .playing-table.seats-6 .balanced-pile.pile-up-right { --mobile-x: 70%; }
+  .playing-table.seats-6 .balanced-pile.pile-down-left { --mobile-x: 34%; }
+  .playing-table.seats-6 .balanced-pile.pile-down-right { --mobile-x: 66%; }
+}
+@media (max-width: 760px) {
+  .playing-table.seats-4 .balanced-pile.pile-left { --mobile-x: 19.5%; }
+  .playing-table.seats-4 .balanced-pile.pile-right { --mobile-x: 80.5%; }
 }

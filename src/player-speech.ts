@@ -1,6 +1,6 @@
 import type { Speech, View } from '../shared/game.ts';
 
-export const SPEECH_DURATION = 3200;
+export const SPEECH_DURATION = 1900;
 
 // Use stable seat IDs, never display names: two players can share a name.
 export function newSpeech(game: View, after: number): Speech[] {

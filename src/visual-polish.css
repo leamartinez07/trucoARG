@@ -500,3 +500,29 @@ dialog button, .playing-table .game-actions button { border-radius: 3px; }
   .lobby > .lobby-heading { padding: 24px 12px; min-height: 170px; }
   .lobby > .lobby-heading h1 { -webkit-text-stroke: .4px currentColor; }
 }
+
+/* Shared header baseline and larger fileteado within the lobby's panel edges. */
+.site-header { align-items: center; }
+.wordmark { align-items: center; align-self: center; }
+.wordmark-logo { transform: translateY(2px); }
+.site-header nav { align-self: stretch; align-items: stretch; }
+.site-header nav button { justify-content: center; }
+.header-tools { align-items: center; }
+.lobby > .lobby-heading::before, .lobby > .lobby-heading::after {
+  width: clamp(148px, 15vw, 184px); height: clamp(148px, 15vw, 184px); top: 8px;
+}
+.lobby > .lobby-heading { padding-inline: 190px; min-height: 220px; }
+.table-wrap > .table-status { margin: 10px 0 0; }
+.site-footer { margin-top: auto; color: #c1cdd3; background: #243f50; border-top: 3px solid #9d916e; }
+.footer-inner { max-width: 1280px; margin: auto; padding: 32px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 24px; }
+.footer-brand img { width: 224px; padding: 9px 12px; box-sizing: content-box; background: #eee9dc; border-radius: 3px; opacity: .9; }
+.footer-brand p { margin: 10px 0 0; font-size: 13px; color: #c1cdd3; }
+.site-footer nav { display: flex; flex-wrap: wrap; gap: 20px; }
+.site-footer nav button { color: #d4dde0; font-size: 13px; padding: 8px 0; border-bottom: 1px solid transparent; }
+.site-footer nav button:hover { color: #e5d7ae; border-bottom-color: #9d916e; }
+.footer-bottom { width: 100%; border-top: 1px solid #ffffff21; padding-top: 18px; display: flex; justify-content: space-between; gap: 12px; font-size: 12px; color: #afbec7; }
+@media (max-width: 760px) {
+  .lobby > .lobby-heading { padding-inline: 12px; min-height: 170px; }
+  .footer-inner { padding: 26px 20px; gap: 20px; }
+  .footer-bottom { flex-direction: column; gap: 6px; }
+}

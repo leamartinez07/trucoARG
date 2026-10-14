@@ -31,6 +31,7 @@ import {
 } from '../shared/game.ts';
 import { relativeSeat, playedPosition, pileDirection, orderedSeatCards } from './table-layout.ts';
 import { gameNotice } from './game-notice.ts';
+import { useGamePresentation } from './use-game-presentation.ts';
 import { usePlayerSpeech } from './use-player-speech.ts';
 import type { GameNotice } from './game-notice.ts';
 import type { Game, View, Player, Card, BidName } from '../shared/game.ts';
@@ -118,7 +119,10 @@ function App() {
     dialogRef = useRef<HTMLDialogElement>(null),
     musicRef = useRef<HTMLAudioElement>(null),
     chatMessagesRef = useRef<HTMLDivElement>(null);
-  const g = room?.game ?? local;
+  const presentation = useGamePresentation(room?.game ?? local, room?.code ?? 'practice');
+  const g = presentation.game;
+  const playbackPaused = useRef(false);
+  playbackPaused.current = presentation.paused;
   const speeches = usePlayerSpeech(g, room?.code ?? 'practice');
   const inTable = Boolean(room || local);
   useEffect(() => {
@@ -189,14 +193,14 @@ function App() {
     if (!local) return;
     const timer = setInterval(() => {
       const game = localRef.current;
-      if (game && botStep(game)) {
+      if (game && !playbackPaused.current && botStep(game)) {
         setLocal(view(game, 0));
       }
     }, 1000);
     return () => clearInterval(timer);
   }, [Boolean(local)]);
   useEffect(() => {
-    if (local?.status !== 'round-end') return;
+    if (local?.status !== 'round-end' || presentation.paused) return;
     const round = local.round;
     const timer = setTimeout(() => {
       const game = localRef.current;
@@ -206,7 +210,7 @@ function App() {
       }
     }, 4000);
     return () => clearTimeout(timer);
-  }, [local?.status, local?.round]);
+  }, [local?.status, local?.round, presentation.paused]);
   useEffect(() => {
     if (!g) {
       noticeKeyRef.current = '';
@@ -253,6 +257,7 @@ function App() {
     previousPlaysRef.current = { scope, round: g.round, count: plays.length };
   }, [g?.trickPlays, g?.table, g?.round, g?.seat, room?.code, sound]);
   function command(data: Record<string, unknown>) {
+    if (playbackPaused.current) return;
     if (localRef.current) {
       try {
         const game = localRef.current;
@@ -343,7 +348,7 @@ function App() {
     }
   }
   const ownTeam = g?.players[g.seat]?.team ?? 0;
-  const canPlay = g?.status === 'playing' && g.turn === g.seat && !g.bid;
+  const canPlay = g?.status === 'playing' && g.turn === g.seat && !g.bid && !presentation.paused;
   const respond = g?.bid && g.bid.team !== ownTeam;
   const nextBid = g
     ? (['', 'truco', 'retruco', 'vale cuatro'][
@@ -489,27 +494,6 @@ function App() {
                 <span>{(g?.players.length ?? room?.size ?? size) === 2 ? 'Vos' : 'Nosotros'} <strong>{currentScore[ownTeam]}</strong></span>
                 <span className="mobile-score-divider" aria-hidden="true" />
                 <span>{(g?.players.length ?? room?.size ?? size) === 2 ? 'Rival' : 'Ellos'} <strong>{currentScore[1 - ownTeam]}</strong></span>
-              </div>
-              <div className="table-status">
-                <span className="status-pulse" />
-                <span>
-                  {g
-                    ? g.players.some((p) => !p.connected)
-                      ? 'Esperamos a que vuelva quien se desconectó.'
-                      : g.bid
-                        ? `${g.players.find((p) => p.team === g.bid!.team)?.name} cantó ${g.bid.name}.`
-                        : g.status === 'playing'
-                          ? g.turn === g.seat
-                            ? 'Te toca. Elegí una carta y jugala.'
-                            : `Juega ${g.players[g.turn].name}.`
-                          : g.message
-                    : `${room!.players.length} de ${room!.size} jugadores en la mesa.`}
-                </span>
-                {g && (
-                  <span className="envido-count">
-                    Tus tantos: <strong>{g.envidoPoints}</strong>
-                  </span>
-                )}
               </div>
               <div className={`playing-table seats-${g?.players.length ?? room?.size ?? size}`}>
                 {notice && (
@@ -671,14 +655,14 @@ function App() {
                         <span className="answer-label">¿Qué decís?</span>
                         <button
                           className="primary"
-                          disabled={busy}
+                          disabled={busy || presentation.paused}
                           onClick={() => command({ action: 'answer', accept: true })}
                         >
                           ¡Quiero!
                         </button>
                         <button
                           className="outline"
-                          disabled={busy}
+                          disabled={busy || presentation.paused}
                           onClick={() => command({ action: 'answer', accept: false })}
                         >
                           No quiero
@@ -686,7 +670,7 @@ function App() {
                         {g.bid?.kind === 'truco' && g.bid.points < 4 && (
                           <button
                             className="call"
-                            disabled={busy}
+                            disabled={busy || presentation.paused}
                             onClick={() => command({ action: 'bid', name: nextBid })}
                           >
                             {nextBid}
@@ -698,7 +682,7 @@ function App() {
                           g.hand.length === 3 && (
                             <button
                               className="call"
-                              disabled={busy}
+                              disabled={busy || presentation.paused}
                               onClick={() => command({ action: 'bid', name: 'envido' })}
                             >
                               Envido primero
@@ -709,7 +693,7 @@ function App() {
                             {g.bid.name === 'envido' && g.bid.envidos < 2 && (
                               <button
                                 className="call"
-                                disabled={busy}
+                                disabled={busy || presentation.paused}
                                 onClick={() => command({ action: 'bid', name: 'envido' })}
                               >
                                 Envido
@@ -718,7 +702,7 @@ function App() {
                             {g.bid.name === 'envido' && (
                               <button
                                 className="call"
-                                disabled={busy}
+                                disabled={busy || presentation.paused}
                                 onClick={() => command({ action: 'bid', name: 'real envido' })}
                               >
                                 Real envido
@@ -726,7 +710,7 @@ function App() {
                             )}
                             <button
                               className="call"
-                              disabled={busy}
+                              disabled={busy || presentation.paused}
                               onClick={() => command({ action: 'bid', name: 'falta envido' })}
                             >
                               Falta envido
@@ -748,7 +732,7 @@ function App() {
                                     <button
                                       key={b}
                                       className="call"
-                                      disabled={busy}
+                                      disabled={busy || presentation.paused}
                                       onClick={() => command({ action: 'bid', name: b })}
                                     >
                                       {b}
@@ -764,7 +748,7 @@ function App() {
                           (g.raiseTeam === null || g.raiseTeam === ownTeam) && (
                             <button
                               className="primary truco-call"
-                              disabled={busy}
+                              disabled={busy || presentation.paused}
                               onClick={() => command({ action: 'bid', name: nextBid })}
                             >
                               ¡{nextBid}!
@@ -772,7 +756,7 @@ function App() {
                           )}
                         <button
                           className="fold"
-                          disabled={Boolean(g.bid) || busy}
+                          disabled={Boolean(g.bid) || busy || presentation.paused}
                           onClick={() => command({ action: 'fold' })}
                         >
                           <Flag size={15} />
@@ -784,6 +768,27 @@ function App() {
                 )}
               </div>
 
+              <div className="table-status">
+                <span className="status-pulse" />
+                <span>
+                  {g
+                    ? g.players.some((p) => !p.connected)
+                      ? 'Esperamos a que vuelva quien se desconectó.'
+                      : g.bid
+                        ? `${g.players.find((p) => p.team === g.bid!.team)?.name} cantó ${g.bid.name}.`
+                        : g.status === 'playing'
+                          ? g.turn === g.seat
+                            ? 'Te toca. Elegí una carta y jugala.'
+                            : `Juega ${g.players[g.turn].name}.`
+                          : g.message
+                    : `${room!.players.length} de ${room!.size} jugadores en la mesa.`}
+                </span>
+                {g && (
+                  <span className="envido-count">
+                    Tus tantos: <strong>{g.envidoPoints}</strong>
+                  </span>
+                )}
+              </div>
             </section>
             <aside className="score-sidebar">
               <div className="scoreboard">
@@ -918,6 +923,17 @@ function App() {
           </div>
         </main>
       )}
+
+      <footer className="site-footer">
+        <div className="footer-inner">
+          <div className="footer-brand"><img src="/wordmark.svg" alt="Falta envido y truco" /><p>Una mesa, una charla y otra mano.</p></div>
+          <nav aria-label="Enlaces del pie de página">
+            <button onClick={() => setDialog('rules')}>Cómo se juega</button>
+            <button onClick={() => setDialog('discord')}>Voz y cámara</button>
+          </nav>
+          <div className="footer-bottom"><span>© {new Date().getFullYear()} Falta envido y truco.</span><span>Hecho para compartir la mesa.</span></div>
+        </div>
+      </footer>
 
       <dialog
         ref={dialogRef}
